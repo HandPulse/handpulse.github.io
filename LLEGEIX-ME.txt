@@ -1,0 +1,90 @@
+HANDPULSE - VERSIÓ 1.0.1 (11/10/2026)
+
+Estadística d'handbol en directe per a entrenadors: partits, entrenaments,
+assistència, fitxa del rival i dades de la lliga. Funciona sense connexió i
+desa les dades a cada aparell. No cal cap compte.
+
+Què hi ha en aquesta carpeta
+index.html                  l'aplicació
+manifest.webmanifest        nom, colors i icones per instal·lar-la
+sw.js                       funcionament sense connexió
+icon-192.png, icon-512.png  icones
+
+
+1. PUBLICAR-LA (una sola vegada)
+1. Amb el compte de GitHub, crea un repositori públic que es digui "handpulse".
+2. Puja-hi tots els fitxers d'aquesta carpeta, tal com estan.
+3. Settings > Pages > Branch: main i carpeta / (root) > Save.
+4. En un o dos minuts tindràs l'adreça: https://NOM-USUARI.github.io/handpulse
+Per actualitzar-la: substitueix index.html i sw.js pels de la versió nova.
+Els aparells la reben sols la propera vegada que l'obren amb connexió.
+
+
+2. INSTAL·LAR-LA A CADA APARELL
+- Android (Chrome o Samsung Internet): obre l'adreça > menú > Instal·la l'aplicació
+  o Afegeix a la pantalla d'inici.
+- iPad i iPhone (Safari): obre l'adreça > Comparteix > Afegeix a la pantalla d'inici.
+  Obre-la sempre des de la icona: si es fa servir dins de Safari, Safari pot
+  esborrar-ne les dades si passen uns dies sense obrir-la.
+- Ordinador (Chrome o Edge): obre l'adreça > icona d'instal·lar de la barra d'adreces.
+Obre-la un cop amb connexió; a partir d'aquí funciona sense xarxa.
+
+
+3. PROVA AMB ELS ENTRENADORS DEL CLUB (2 o 3 jornades)
+Cada entrenador, el primer dia:
+- Inici > Equip i categoria (nom, categoria i temporada).
+- Inici > Plantilla (dorsal, nom i porters).
+Cada partit:
+- Partit nou > tria la convocatòria (fins a 16) > Comença.
+- Apunta-ho tot; en acabar, desa la còpia de seguretat i obre l'informe.
+Al final de la prova:
+- Inici > Millores i errors. Hi van sols l'aparell, la versió i l'últim error, si n'hi ha hagut.
+Què volem saber: si s'apunta tot el partit, quin pas costa més, què hi falta i si la pagarien.
+
+
+4. LES DADES
+- Es desen a l'aparell i no s'envien enlloc.
+- Desa una còpia de seguretat després de cada partit: Inici > Còpia de seguretat.
+- Per passar-les a un altre aparell o a una versió nova: desa la còpia en un
+  i importa-la a l'altre (Còpia de seguretat > Recuperar una còpia).
+- Si el navegador no pot desar, la barra de dalt ho avisa en vermell:
+  desa una còpia de seguretat de seguida.
+- La finestra de còpia de seguretat mostra quant ocupen les dades.
+
+
+5. SI ALGUNA COSA FALLA
+- Si una part de la pantalla falla, la resta continua funcionant i les dades es mantenen.
+- L'error s'envia sol (punt 6). També es pot explicar a Millores i errors.
+
+
+6. INFORMES AUTOMÀTICS (sense que l'entrenador hi faci res)
+Què s'envia, sense noms de jugadors ni dades dels partits:
+- Errors de pantalla, amb on han passat i els darrers passos.
+- Penjades: si l'app es bloqueja més de 8 segons, o si la sessió anterior es va
+  tallar amb la pantalla oberta.
+- En acabar cada partit: la valoració, obligatòria i d'un sol toc (Bé, Regular o Malament,
+  amb comentari opcional), una pregunta de millora que va canviant, i detalls concrets
+  (segons per acció, desfets i correccions). Si l'app es tanca abans de valorar,
+  la demana en tornar-la a obrir.
+- Quins apartats es fan servir més.
+Cada informe porta la versió, l'aparell, l'equip i un identificador anònim de l'aparell.
+Sense connexió, s'esperen a l'aparell i s'envien quan torna la connexió.
+El mateix error només s'envia un cop per hora.
+Com activar-ho (una sola vegada):
+- Executa el programa handpulse_formularis_google.gs (instruccions a dins).
+  Si vols els avisos en una altra adreça, escriu-la a CORREU, al principi del programa.
+- Crea els formularis «Millores i errors» i «Informes automàtics» i un full amb totes les respostes.
+- Arriba un correu per a cada error, penjada, valoració «Malament» i opinió escrita.
+- Envia la línia que surt al registre a qui et manté l'app, per posar-la a index.html.
+Ja està activat: els formularis són al compte handpulse.app@gmail.com.
+És la versió gratuïta de proves: els informes no es poden desactivar. L'app ho explica
+a la pantalla de benvinguda i a les novetats.
+
+
+PER A QUI LA MANTINGUI
+- Constants al principi del codi d'index.html:
+  LICENSING (false: tot obert durant les proves), FREE_MATCHES, PAY_URL i validKey() (pagament);
+  FB_WA, FB_MAIL o FB_FORM (on arriben les respostes de Millores i errors;
+  si són buits, s'envien amb el menú de compartir del mòbil);
+  AUTO_FORM (on arriben els informes automàtics).
+- En publicar una versió nova, canvia CACHE a sw.js i VNUM i VERSIO a index.html.
