@@ -742,6 +742,9 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
 
 .updbar{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:10px 14px;border-radius:12px;border:1px solid var(--amber);background:rgba(242,183,5,.14);font-weight:600}
 .updbar span{flex:1 1 auto}
+
+/* mapa de la porteria de l'informe: 3 files iguals a tots els navegadors (Safari les apilava a dalt) */
+.rgoal{grid-template-rows:repeat(3,minmax(0,1fr));align-content:stretch}
 </style>
 </head>
 <body>
@@ -824,7 +827,7 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261013-4", VERSIO = VNUM;
+  var VNUM = "20261013-6", VERSIO = VNUM;
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -955,6 +958,11 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
   function loadMatch(id) { return Promise.resolve(lsGet(LSM(id))); }
   // ---- avís de versió nova: només a la web publicada; actualitza quan l'entrenador ho tria
   var upd = { ver: null, at: 0 };
+  var bootAt = Date.now();
+  function goUpdate(v) {
+    try { sessionStorage.setItem("hp-upd", v + "|" + Date.now()); } catch (e) {}
+    (window.__hpNav || function (u) { location.replace(u); })(location.pathname + "?v=" + encodeURIComponent(v));
+  }
   function checkUpdate(force) {
     if (location.protocol !== "https:" || hasRuntime() || !window.fetch || upd.ver || navigator.onLine === false) return;
     var now = Date.now();
@@ -962,7 +970,13 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
     upd.at = now;
     fetch(location.pathname + "?hpchk=" + now, { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) {
       var q = /var VNUM = "([^"]+)"/.exec(t || "");
-      if (q && q[1] !== VNUM) { upd.ver = q[1]; render(); }
+      if (!q || q[1] === VNUM) return;
+      upd.ver = q[1];
+      // En obrir l'app, si no hi ha cap partit en marxa ni cap acció a mig apuntar, s'actualitza directament (un sol intent).
+      var tried = ""; try { tried = sessionStorage.getItem("hp-upd") || ""; } catch (e) {}
+      var t0 = tried.split("|"), recent = t0[0] === upd.ver && Date.now() - (parseInt(t0[1], 10) || 0) < 5 * 60000;
+      if (Date.now() - bootAt < 20000 && !(m && running()) && !pending && (!modal || modal === "welcome") && !typing() && !recent) { goUpdate(upd.ver); return; }
+      render();
     }).catch(function () {});
   }
   function hasRuntime() { return !!(window.claude && typeof window.claude.use === "function"); }
@@ -1382,7 +1396,7 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
   function render() {
     safe(renderBoard, "marcador"); safe(renderQui, "qui"); safe(renderRiv, "rival"); safe(renderQue, "què"); safe(renderOn, "on");
     safe(renderFoot, "peu"); safe(renderSum, "resum"); safe(renderHome, "inici"); safe(renderAtt, "assistència"); safe(renderModal, "finestra");
-    if (!document.body.classList.contains("compact") || document.querySelector(".tight")) requestAnimationFrame(function () { safe(fitRosters, "graelles"); });
+    requestAnimationFrame(function () { safe(fitWide, "mides"); if (!document.body.classList.contains("compact") || document.querySelector(".tight")) safe(fitRosters, "graelles"); });
     safe(function () {
       var vp = visiblePanel();
       ["qui", "que", "on"].forEach(function (id) { $(id).classList.toggle("show", id === vp); });
@@ -1985,7 +1999,7 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
       h += courtHTML(st === "zona");
     }
     setHTML(el, h);
-    if (/svg class="court/.test(h)) setTimeout(fitCourt, 0);
+    requestAnimationFrame(function () { safe(fitWide, "mides"); if (/svg class="court/.test(h)) fitCourt(); });
   }
 
   function chipsFor(p) {
@@ -3721,7 +3735,7 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
       toast(T("Pròrroga: el rellotge és a") + " " + fmtClock(partWin()[0]) + ". " + T("Engega'l quan comenci."));
     },
     otno: function () { if (!m) return; modal = null; finishMatch(); },
-    updnow: function () { if (upd.ver) location.replace(location.pathname + "?v=" + encodeURIComponent(upd.ver)); },
+    updnow: function () { if (upd.ver) goUpdate(upd.ver); },
     attgo: function () { modal = null; view = "att"; att.tab = "ent"; att.cur = null; att.call = null; render(); },
     attcopy: function () {
       var t = attTable("\t");
@@ -3900,6 +3914,43 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
 
   var mqShort = window.matchMedia ? window.matchMedia("(max-height: 540px)") : null;
   var mq = window.matchMedia ? window.matchMedia("(orientation: portrait), (max-width: 900px), (max-height: 540px)") : null;
+  // Pantalla ampla: mides exactes en píxels perquè tot hi càpiga igual a Safari (iPad) i a Chrome.
+  function availFor(panel, el) {
+    var pr = panel.getBoundingClientRect(), pb = parseFloat(getComputedStyle(panel).paddingBottom) || 0;
+    var bottom = pr.top + panel.clientTop + panel.clientHeight - pb, er = el.getBoundingClientRect(), last = null, n = el.nextElementSibling;
+    while (n) { if (n.offsetParent !== null) last = n; n = n.nextElementSibling; }
+    return Math.floor(bottom - er.top - (last ? last.getBoundingClientRect().bottom - er.bottom : 0));
+  }
+  function sizeRows(panel, g, maxRow) {
+    if (!panel || !g || !g.children.length) return;
+    var tops = {}, rows, gap = parseFloat(getComputedStyle(g).rowGap) || 6;
+    Array.prototype.forEach.call(g.children, function (c) { tops[c.offsetTop] = 1; });
+    rows = Object.keys(tops).length || 1;
+    var rh = Math.max(34, Math.min(maxRow, Math.floor((availFor(panel, g) - (rows - 1) * gap) / rows)));
+    g.style.gridAutoRows = rh + "px"; g.style.gridTemplateRows = "repeat(" + rows + "," + rh + "px)";
+  }
+  var fitDone = false, WIDE_SEL = "#qui > .roster, #riv > .roster, #riv > .pad, #on > .roster, #on > .court, #on > .goalgrid";
+  function fitWide() {
+    var wide = !document.body.classList.contains("compact");
+    if (!wide) {
+      if (fitDone) { fitDone = false; Array.prototype.forEach.call(document.querySelectorAll(WIDE_SEL), function (el) { el.style.gridAutoRows = el.style.gridTemplateRows = el.style.height = el.style.width = el.style.flex = ""; }); }
+      return;
+    }
+    var qp = $("qui");
+    if (!qp || !qp.clientHeight) return;
+    fitDone = true;
+    var q = function (s) { return document.querySelector(s); };
+    sizeRows($("qui"), q("#qui > .roster"), 66); sizeRows($("riv"), q("#riv > .roster"), 66);
+    sizeRows($("riv"), q("#riv > .pad"), 64); sizeRows($("on"), q("#on > .roster"), 60);
+    var on = $("on"), c = q("#on > .court"), gg = q("#on > .goalgrid");
+    if (on && c) { c.style.flex = "none"; c.style.width = "100%"; c.style.height = Math.max(110, availFor(on, c)) + "px"; }
+    if (on && gg) {
+      var cs = getComputedStyle(on), pw = on.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+      var gh = Math.max(90, Math.min(availFor(on, gg), Math.floor(pw / 1.5)));
+      gg.style.flex = "none"; gg.style.height = gh + "px"; gg.style.width = Math.floor(gh * 1.5) + "px";
+    }
+    if (c) fitCourt();
+  }
   function fitRosters() {
     ["qui", "on", "riv"].forEach(function (id) {
       var el = $(id); if (!el) return;
@@ -3908,7 +3959,7 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
     });
   }
   var fitT = null;
-  window.addEventListener("resize", function () { clearTimeout(fitT); fitT = setTimeout(function () { fitCourt(); fitRosters(); }, 150); });
+  window.addEventListener("resize", function () { clearTimeout(fitT); fitT = setTimeout(function () { fitWide(); fitCourt(); fitRosters(); }, 150); });
   var modePending = false;
   function applyMode() {
     document.body.classList.toggle("compact", !!(mq && mq.matches));
@@ -3976,7 +4027,7 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
       setTimeout(function () { report("alta", "primera obertura", "Alta de l'aparell", appStats()); }, 2500);
     }
     setTimeout(dailyPing, 3500);
-    setTimeout(function () { checkUpdate(true); }, 6000);
+    setTimeout(function () { checkUpdate(true); }, 1200);
     setInterval(function () { if (document.visibilityState !== "hidden") checkUpdate(false); }, 30 * 60000);
     try { if (/[?&](v|hpchk)=/.test(location.search) && history.replaceState) history.replaceState(null, "", location.pathname); } catch (e) {}
   })();
@@ -3989,7 +4040,7 @@ body:not(.compact) .board .sync{flex:0 1 auto;min-width:0;max-width:220px;overfl
 
   window.__peli = { get app() { return app; }, get m() { return m; }, get pending() { return pending; }, tsv: tsv, parseRoster: parseRoster,
     openReport: openReport, rep: rep, T: function (x) { return T(x); }, TH: function (x) { return TH(x); }, setLang: function (l) { LANG = l; TCACHE = {}; TMPL = null; },  applyBackup: applyBackup, backupData: backupData };
-  window.__peli.checkUpdate = checkUpdate; window.__peli.upd = upd;
+  window.__peli.checkUpdate = checkUpdate; window.__peli.upd = upd; window.__peli.setBoot = function (t) { bootAt = t; };
   window.__peli.rqLoad = rqLoad; window.__peli.report = report; window.__peli.matchStats = matchStats; window.__peli.rqFlush = rqFlush;
 })();
 </script>
