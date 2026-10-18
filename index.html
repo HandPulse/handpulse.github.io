@@ -1022,12 +1022,12 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261018", VERSIO = VNUM, BUILD = 2;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261018", VERSIO = VNUM, BUILD = 3;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
   // Lliga: adreça /exec del programa «lliga» de Google, que llegeix iSquad (buida = no es llegeix sola)
-  var LEAGUE_API = "";
+  var LEAGUE_API = "https://script.google.com/macros/s/AKfycbzrKhUmQ3HxZHKnlxLm7-XkFkPLsTLJf_zuH4DyOcTtFLLpRWU8mRLmNxOptuMn5ywjHg/exec";
   var FB_WA = "", FB_MAIL = "", FB_FORM = {"url":"https://docs.google.com/forms/d/e/1FAIpQLSc9pSkgv8LnNNugOrbAhx41NESqbyk6odzMbhqovScydhCJlQ/formResponse","fields":{"who":"entry.998544043","imp":"entry.2105830500","err":"entry.2132952886","miss":"entry.1739311954","live":"entry.523217857","pay":"entry.1243709456","dev":"entry.2058135287"}}, AUTO_FORM = {"url":"https://docs.google.com/forms/d/e/1FAIpQLSdvkU6c6YIIpeMCTpZ1mhUgtA8lYkzsQg0LFnwvpMdxQQHuvQ/formResponse","fields":{"tipus":"entry.1063477447","versio":"entry.539364214","equip":"entry.130682247","aparell":"entry.1378740321","id":"entry.436454670","on":"entry.1546866950","missatge":"entry.1718998177","detall":"entry.524669906","hora":"entry.1319629187"}};
   // ---- informes automàtics: errors, penjades, valoracions, preguntes i ús (sense noms de jugadors)
   var RQK = "peli-directe:rq", HBK = "peli-directe:hb", USEK = "peli-directe:use", RQMAX = 60;
@@ -3632,7 +3632,7 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
     var todo = (app.fedMatches || []).filter(function (x) {
       if (!x.p || !x.r) return false;
       var f = ownFixtureOf(x);
-      return f && !app.actes[String(f.j)] && !(app.actaTried || {})[x.p];
+      return f && !app.actes[String(f.j)] && (app.actaTried || {})[x.p] !== todayISO();
     }).slice(0, 2);
     if (!todo.length) return;
     lg.acta = true;
@@ -3640,8 +3640,8 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
       if (i >= todo.length) { lg.acta = false; saveApp(); render(); return; }
       var x = todo[i];
       lgApi({ a: "acta", p: x.p }).then(function (a) {
-        (app.actaTried = app.actaTried || {})[x.p] = a && a.ok ? 0 : todayISO();
-        if (a && a.ok) applyActa(a, x);
+        var desada = !!(a && a.ok && applyActa(a, x));
+        (app.actaTried = app.actaTried || {})[x.p] = desada ? 0 : todayISO();
         next(i + 1);
       }).catch(function () { lg.acta = false; });
     };
@@ -3653,7 +3653,9 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
   }
   function applyActa(a, x) {
     var side = String(x.li) === String(app.ownId) ? 0 : 1, t = a.teams && a.teams[side], f = ownFixtureOf(x);
-    if (!t || !t.ps || !t.ps.length || !f) return;
+    if (!t || !t.ps || !t.ps.length || !f) return false;
+    var altre = a.teams[1 - side], riv = side === 0 ? x.v : x.l;
+    if (altre && altre.n && riv && !sameTeam(altre.n, riv)) return false;
     var j = String(f.j), o = {};
     t.ps.forEach(function (q) { o[q[0]] = [q[2] || 0, null]; });
     app.actes[j] = o; (app.actaConv = app.actaConv || {})[j] = t.ps.map(function (q) { return q[0]; });
@@ -3678,6 +3680,7 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
       mm.squad = sq; mm.actaSq = 1;
       if (m && m.id === id) { m = mm; saveMatch(); } else lsSet(LSM(id), mm);
     });
+    return true;
   }
   function standRow(n) { var st = app.standings || []; for (var i = 0; i < st.length; i++) if (sameTeam(st[i][1], n)) return st[i]; return null; }
   function standLine(r) {
