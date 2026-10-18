@@ -1022,7 +1022,7 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261018", VERSIO = VNUM, BUILD = 3;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261018", VERSIO = VNUM, BUILD = 4;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -3527,6 +3527,7 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
   function applyLeague(d) {
     var res = {}, lastJ = 0, now = new Date();
     app.teamsFed = (d.teams || []).map(function (t) { return typeof t === "string" ? { n: t, id: "" } : t; });
+    if (!lg.escuts && window.Image) { lg.escuts = 1; app.teamsFed.forEach(function (t) { if (t.logo) { var im = new Image(); im.src = t.logo; } }); }
     d.teams = app.teamsFed.map(function (t) { return t.n; });
     if (app.ownId) { var mine = app.teamsFed.filter(function (t) { return String(t.id) === String(app.ownId); })[0]; if (mine) { app.own = mine.n; app.ownAsk = false; } }
     (d.cal || []).forEach(function (c) { (res[c.j] = res[c.j] || []).push([c.l, c.v, c.r ? c.r[0] + "-" + c.r[1] : ""]); if (c.r && c.j > lastJ) lastJ = c.j; });
@@ -3554,13 +3555,15 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
       return;
     }
     lg.busy = true; lg.err = ""; if (!quiet) render();
+    var alhora = !!(app.ownId && (app.fedSyncAt !== todayISO() || !quiet));
+    if (alhora) fedSync(true);
     fetch(LEAGUE_API + "?url=" + encodeURIComponent(app.compUrl) + (force ? "&force=1" : ""), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
       lg.busy = false;
       if (!d || !d.ok) { lg.err = (d && d.error) || T("No s'ha pogut llegir la federació."); if (!quiet) toast(lg.err); render(); return; }
       applyLeague(d);
       if (app.ownAsk && (app.teamsFed || []).length) { if (!quiet || !modal) { modal = "ownpick"; } render(); return; }
       render(); if (!quiet) toast(T("Classificació i resultats al dia."));
-      if (app.ownId && (app.fedSyncAt !== todayISO() || !quiet)) fedSync(true); else actaCheck();
+      if (!alhora && app.ownId && (app.fedSyncAt !== todayISO() || !quiet)) fedSync(true); else actaCheck();
     }).catch(function () { lg.busy = false; lg.err = T("Sense connexió amb la federació: es mostren les últimes dades."); if (!quiet) toast(lg.err); render(); });
   }
   function shortName(n) { var w = String(n || "").split(" ").filter(Boolean); return w.length >= 3 ? w[0] + " " + w[1] : w.join(" "); }
@@ -3633,9 +3636,23 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
       if (!x.p || !x.r) return false;
       var f = ownFixtureOf(x);
       return f && !app.actes[String(f.j)] && (app.actaTried || {})[x.p] !== todayISO();
-    }).slice(0, 2);
+    }).slice(0, 20);
     if (!todo.length) return;
     lg.acta = true;
+    lgApi({ a: "actes", p: todo.map(function (x) { return x.p; }).join(",") }).then(function (r) {
+      if (!r || !r.ok || !r.actes) { actaUnaPerUna(todo.slice(0, 2)); return; }
+      var pendents = 0;
+      todo.forEach(function (x) {
+        var a = r.actes[x.p];
+        if (!a || /^Pendent/.test(a.error || "")) { pendents++; return; }
+        var desada = !!(a.ok && applyActa(a, x));
+        (app.actaTried = app.actaTried || {})[x.p] = desada ? 0 : todayISO();
+      });
+      lg.acta = false; saveApp(); render();
+      if (pendents) setTimeout(actaCheck, 1500);
+    }).catch(function () { lg.acta = false; });
+  }
+  function actaUnaPerUna(todo) {
     var next = function (i) {
       if (i >= todo.length) { lg.acta = false; saveApp(); render(); return; }
       var x = todo[i];
@@ -4740,7 +4757,7 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
       if (url && !/^https?:\/\//i.test(url)) { $("teammsg").textContent = T("L'enllaç ha de començar per https://"); return; }
       var urlChg = url !== (app.compUrl || "");
       app.team = $("steam").value.trim(); app.cat = $("scat").value.trim(); app.season = $("sseason").value.trim(); app.compUrl = url;
-      if (urlChg) { app.leagueAt = 0; app.ownAsk = false; app.ownId = ""; app.fedSyncAt = ""; app.teamsFed = []; setTimeout(function () { leagueFetch(true, false); }, 300); }
+      if (urlChg) { app.leagueAt = 0; app.ownAsk = false; app.ownId = ""; app.fedSyncAt = ""; app.teamsFed = []; setTimeout(function () { leagueFetch(false, false); }, 300); }
       var cd = catDur(app.cat), chg = cd && cd !== app.durada;
       if (cd) app.durada = cd;
       saveApp(); modal = null; render();
@@ -4755,11 +4772,11 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
       lgApi({ a: "fases", url: lg.base || app.compUrl, comp: c.comp || "", id: c.id || "" }).then(function (r) {
         if (!r || !r.ok || !r.fases.length) { toast((r && r.error) || T("No s'ha pogut llegir la federació.")); return; }
         lg.fases = r.fases; app.calComp = c.n;
-        if (r.fases.length === 1) { app.compUrl = r.fases[0].url; saveApp(); leagueFetch(true, false); }
+        if (r.fases.length === 1) { app.compUrl = r.fases[0].url; saveApp(); leagueFetch(false, false); }
         else { modal = "fasepick"; render(); }
       }).catch(function () { toast(T("Sense connexió amb la federació: es mostren les últimes dades.")); });
     },
-    fasepick: function (v) { var f = (lg.fases || [])[parseInt(v, 10)]; if (!f) return; app.compUrl = f.url; saveApp(); modal = null; render(); leagueFetch(true, false); },
+    fasepick: function (v) { var f = (lg.fases || [])[parseInt(v, 10)]; if (!f) return; app.compUrl = f.url; saveApp(); modal = null; render(); leagueFetch(false, false); },
     ownpick: function (v) {
       var t = (app.teamsFed || []).filter(function (x) { return String(x.id || x.n) === String(v); })[0];
       if (!t) return;
@@ -4768,7 +4785,7 @@ body.compact.sumon #qui.show{overflow-y:auto;-webkit-overflow-scrolling:touch;ov
       var os = scorersFor(app.own); if (os) app.ownScorers = os;
       saveApp(); modal = null; render(); fedSync(false);
     },
-    ownchange: function () { if ((app.teamsFed || []).length) { modal = "ownpick"; render(); } else { modal = null; render(); leagueFetch(true, false); } },
+    ownchange: function () { if ((app.teamsFed || []).length) { modal = "ownpick"; render(); } else { modal = null; render(); leagueFetch(false, false); } },
     fedsyncnow: function () { modal = null; render(); fedSync(false); },
     standings: function () {
       if (leagueOn()) { modal = "class"; render(); if (!(app.standings && app.standings.length) || Date.now() - (app.leagueAt || 0) > 3 * 3600000) leagueFetch(false, false); return; }
