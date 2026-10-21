@@ -1222,7 +1222,7 @@ img.crest.tcrest{object-fit:contain;background:#fff;border-radius:50%}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261021", VERSIO = VNUM, BUILD = 6;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261021", VERSIO = VNUM, BUILD = 7;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -4770,7 +4770,7 @@ img.crest.tcrest{object-fit:contain;background:#fff;border-radius:50%}
   function prevFetch(name) {
     var k = nkey(name), c = (app.rivalFed || {})[k];
     lg.rvf = lg.rvf || {};
-    if (!leagueOn() || !compId() || (c && c.at === todayISO() && c.eq && c.eq.some(function (x) { return x.f; }) && ((c.ex && c.exv >= 3) || !c.club)) || lg.rvf[k]) return;
+    if (!leagueOn() || !compId() || (c && c.at === todayISO() && c.eq && c.eq.some(function (x) { return x.f; }) && ((c.ex && c.exv >= 4) || !c.club)) || lg.rvf[k]) return;
     var ft = fedTeam(name);
     if (!ft || !ft.id) return;
     lg.rvf[k] = 1;
