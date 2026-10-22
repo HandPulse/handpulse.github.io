@@ -1251,7 +1251,7 @@ img.crest.tcrest{object-fit:contain;background:#fff;border-radius:50%}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261021", VERSIO = VNUM, BUILD = 15;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261022", VERSIO = VNUM, BUILD = 1;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -4358,9 +4358,15 @@ img.crest.tcrest{object-fit:contain;background:#fff;border-radius:50%}
     if (!fw || fw.err || fw.busy || Date.now() - (fw.at || 0) > 3600000) { fw = { cat: app.cat || "", keepId: app.fedCat || "" }; fwLoad(seasonId(app.season || defSeason()), ""); }
     render();
   }
+  // consultes a la federació amb un límit de temps: si l'script no respon, l'app no es queda esperant
+  // (la lectura d'actes converteix PDF i té més marge)
+  var LG_TEMPS = { actes: 90000, acta: 60000, clubfotos: 60000, darrera: 45000 };
   function lgApi(p) {
     var qs = Object.keys(p).map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(p[k]); }).join("&");
-    return fetch(LEAGUE_API + "?" + qs, { cache: "no-store" }).then(function (r) { return r.json(); });
+    var ms = LG_TEMPS[p.a] || 40000, ctl = typeof AbortController !== "undefined" ? new AbortController() : null, tm = null;
+    var req = fetch(LEAGUE_API + "?" + qs, ctl ? { cache: "no-store", signal: ctl.signal } : { cache: "no-store" }).then(function (r) { return r.json(); });
+    var lim = new Promise(function (res, rej) { tm = setTimeout(function () { if (ctl) { try { ctl.abort(); } catch (e) {} } rej(new Error("temps")); }, ms); });
+    return Promise.race([req, lim]).then(function (v) { clearTimeout(tm); return v; }, function (e) { clearTimeout(tm); throw e; });
   }
   function compId() { var q = /[?&]id=(\d+)/.exec(app.compUrl || ""); return q ? q[1] : ""; }
   function fedTeam(name) {
@@ -4995,7 +5001,14 @@ img.crest.tcrest{object-fit:contain;background:#fff;border-radius:50%}
       var r = rr[0], e = rr[1], o = (app.rivalFed = app.rivalFed || {})[k] || {};
       if (r && r.ok && r.ps && r.ps.length) { o.ps = r.ps; o.j = r.j || 0; }
       if (e && e.ok && e.players) { o.eq = e.players.filter(function (x) { return !x.b; }).map(function (x) { return { n: x.n, t: x.t || "J", f: x.f || "" }; }); o.club = e.club || ""; o.kits = e.kits || []; }
-      if (o.ps || o.eq) { o.at = todayISO(); app.rivalFed[k] = o; saveApp(); }
+      if (o.ps || o.eq) {
+        o.at = todayISO(); app.rivalFed[k] = o;
+        // només els 25 rivals consultats més recentment: l'espai del mòbil no s'omple al llarg de la temporada
+        var rf = app.rivalFed, rks = Object.keys(rf);
+        if (rks.length > 25) rks.sort(function (x, y) { return String((rf[x] || {}).at || "") < String((rf[y] || {}).at || "") ? -1 : 1; })
+          .slice(0, rks.length - 25).forEach(function (x) { if (x !== k) delete rf[x]; });
+        saveApp();
+      }
       if (rep.open && rep.data && rep.data.riv && nkey(rep.data.riv) === k) renderReport();
       if (m && view === "match" && nkey(m.rival) === k && o.kits && o.kits.length) { kitDefaults(); saveMatch(); if (modal !== "newmatch") render(); }
       if (modal === "newmatch" || modal === "kits") kitsRefresh();
