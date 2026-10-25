@@ -1317,7 +1317,7 @@ body.compact .svm.bad{color:#FF8A80}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261025", VERSIO = VNUM, BUILD = 5;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261025", VERSIO = VNUM, BUILD = 6;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -2003,6 +2003,17 @@ body.compact .svm.bad{color:#FF8A80}
       return '<span class="ref"><span class="refi' + (u ? " refph" : "") + '">' + esc(inits(n)) + (u ? '<img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : "") + "</span>" + esc(n) + "</span>";
     }).join("") + "</p>";
   }
+  // el número de partit de la federació: el calendari només el porta dels partits jugats; la fitxa de l'equip, de tots
+  function fedMatchP(f) {
+    if (!f) return "";
+    if (f.p) return f.p;
+    var x = (app.fedMatches || []).filter(function (y) {
+      if (!y.p) return false;
+      var home = String(y.li) === String(app.ownId), riv = home ? y.v : y.l;
+      return home === !!f.casa && sameTeam(riv, f.riv) && (!f.d || !y.d || y.d === f.d);
+    })[0];
+    return x ? x.p : "";
+  }
   function desigKey(f) { return f ? String(f.j) + "|" + nkey(f.riv) : ""; }
   function desigFor(f) { var k = desigKey(f); return k ? (app.desig || {})[k] : null; }
   // les designacions es publiquen pocs dies abans: només es miren (i es mostren) per als partits dels pròxims 14 dies
@@ -2013,7 +2024,7 @@ body.compact .svm.bad{color:#FF8A80}
     // un cop per sessió; si encara no hi havia àrbitres, s'hi torna a mirar al cap de 30 minuts
     if (last && ((dg0 && dg0.arb && dg0.arb.length) || Date.now() - last < 30 * 60000)) return;
     lg.desTry[k] = Date.now();
-    lgApi({ a: "designa", n: app.own || teamName(), r: f.riv, d: f.d, p: f.p || "" }).then(function (r) {
+    lgApi({ a: "designa", n: app.own || teamName(), r: f.riv, d: f.d, p: fedMatchP(f) }).then(function (r) {
       if (!r || !r.ok) return;
       var dg = app.desig = app.desig || {}, ks = Object.keys(dg);
       if (ks.length > 20) delete dg[ks[0]];
