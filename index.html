@@ -1323,7 +1323,7 @@ body.compact .svm.bad{color:#FF8A80}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261025", VERSIO = VNUM, BUILD = 8;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261025", VERSIO = VNUM, BUILD = 9;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -2643,16 +2643,20 @@ body.compact .svm.bad{color:#FF8A80}
   }
   function isShort() { return !!(mqShort && mqShort.matches); }
   function sanctions(e, d) {
-    var r = { tg: 0, xs: [], tv: 0, tb: 0 };
+    var r = { tg: 0, xs: [], tv: 0, tb: 0, rt: [] }, tbT = [];
     if (m) m.acts.forEach(function (a) {
       if (a.e !== e || a.d !== d || a.o) return;
       if (a.a === "TG") r.tg++;
       else if (a.a === "2M") r.xs.push(a.t);
-      else if (a.a === "TV") r.tv++;
-      else if (a.a === "TB") r.tb++;
+      else if (a.a === "TV") { r.tv++; r.rt.push(a.t); }
+      else if (a.a === "TB") { r.tb++; tbT.push(a.t); }
     });
+    // la blava que acompanya una vermella és la mateixa desqualificació (no són 2 minuts més)
+    tbT.forEach(function (t) { if (!r.rt.some(function (x) { return Math.abs(x - t) <= 120; })) r.rt.push(t); });
     return r;
   }
+  // els moments que compten per als 2 minuts d'inferioritat: les exclusions i la desqualificació (vermella o blava)
+  function xAll(r) { return r.xs.concat(r.rt || []); }
   // límits de sancions per equip (també per al rival), segons el criteri del club i les Regles de joc 16:1 i 16:3:
   // una sola groga per a tots els jugadors, una sola groga per a tota la banqueta, cap groga a qui ja té un 2′ i un sol 2′ per a la banqueta
   var sancBlk = null;
@@ -2725,12 +2729,15 @@ body.compact .svm.bad{color:#FF8A80}
   }
   function badges(e, d) { var r = sanctions(e, d); return badgeHTML(r, isOut(r)); }
   function badgeHTML(r, out) {
-    if (!r.tg && !r.xs.length && !r.tv) return "";
+    if (!r.tg && !r.xs.length && !r.tv && !r.tb) return "";
     var h = '<span class="sanc" aria-hidden="true">';
     if (r.tg) h += '<i class="yc"></i>';
-    if (r.xs.length) {
-      var crosses = "\u2715".repeat(Math.min(r.xs.length, 3)), end = exclEnd(r.xs), left = end - elapsed();
-      h += left > 0 ? '<b class="x live" data-end="' + end + '" data-n="' + crosses + '">' + crosses + " " + fmtLeft(left) + "</b>" : '<b class="x">' + crosses + "</b>";
+    var xa = xAll(r);
+    if (xa.length) {
+      // les creus són les exclusions; el compte enrere inclou també els 2 minuts de la vermella
+      var crosses = "\u2715".repeat(Math.min(r.xs.length, 3)), end = exclEnd(xa), left = end - elapsed();
+      if (left > 0) h += '<b class="x live" data-end="' + end + '" data-n="' + crosses + '">' + (crosses ? crosses + " " : "") + fmtLeft(left) + "</b>";
+      else if (crosses) h += '<b class="x">' + crosses + "</b>";
     }
     if (out) h += '<i class="rc"></i>';
     if (r.tb) h += '<i class="bc"></i>';
@@ -2739,7 +2746,7 @@ body.compact .svm.bad{color:#FF8A80}
   function isDQ(e, d) { return d != null && isOut(sanctions(e, d)); }
   // exclòs ara mateix (els 2 minuts encara corren): no pot fer cap acció de joc, només rebre sancions
   var SANC_OK = ["TG", "2M", "TV", "TB"];
-  function suspLeft(e, d) { if (d == null || !m) return 0; var sc = sanctions(e, d); return sc.xs.length ? Math.max(0, exclEnd(sc.xs) - elapsed()) : 0; }
+  function suspLeft(e, d) { if (d == null || !m) return 0; var x = xAll(sanctions(e, d)); return x.length ? Math.max(0, exclEnd(x) - elapsed()) : 0; }
   function suspMsg(d, e) { return (e === "R" ? T("El rival") + " " + d : d + (nameOf(d) ? " " + nameOf(d) : "")) + " " + T("està exclòs: no pot jugar fins d'aquí a") + " " + fmtLeft(suspLeft(e, d)) + "."; }
   function suspHint(d, e) { return (e === "R" ? T("El rival") + " " + d : d + (nameOf(d) ? " " + nameOf(d) : "")) + " " + T("està exclòs") + " (" + fmtLeft(suspLeft(e, d)) + "): " + T("només li pots posar sancions.") ; }
   function suspBlock(e, d, a) { return d != null && (!a || SANC_OK.indexOf(a) < 0) && suspLeft(e, d) > 0; }
@@ -2822,7 +2829,7 @@ body.compact .svm.bad{color:#FF8A80}
   }
   function kitNote() { if (!m || !m.kit) return "1a · 1a"; return T("nosaltres") + " " + (m.kit.N.j + 1) + "a · " + T("rival") + " " + (m.kit.R.j + 1) + "a"; }
   function playerBtn(p, e, act, sel) {
-    var sc = sanctions(e, p.d), left = sc.xs.length ? exclEnd(sc.xs) - elapsed() : 0, out = isOut(sc);
+    var sc = sanctions(e, p.d), xa = xAll(sc), left = xa.length ? exclEnd(xa) - elapsed() : 0, out = isOut(sc);
     return '<button class="pl' + (e === "R" ? " riv" : "") + (p.gk ? " gk" : "") + (out ? " out" : "") + (left > 0 && !out ? " susp" : "") + (left > 0 && left <= 5 ? " blink" : "") +
       (sel ? " sel" : "") + '" data-act="' + act + '" data-v="' + p.d + '"' + (out ? ' disabled aria-disabled="true" title="' + T("Desqualificat") + '"' : "") + ">" +
       badges(e, p.d) + cntBadge(e, p.d) + (out ? '<span class="n">' + p.d + "</span>" : numHTML(e, p)) + '<span class="nm">' + (out ? T("Desqualificat") : esc(p.n)) + "</span></button>";
@@ -6714,10 +6721,11 @@ body.compact .svm.bad{color:#FF8A80}
     if (c) c.textContent = fmtClock(now);
     if (c2) c2.textContent = fmtClock(now);
     Array.prototype.forEach.call(document.querySelectorAll(".sanc .x.live"), function (b) {
-      var left = parseFloat(b.getAttribute("data-end")) - now, n = b.getAttribute("data-n") || "\u2715";
+      var left = parseFloat(b.getAttribute("data-end")) - now, n = b.getAttribute("data-n");
       var pl = b.closest ? b.closest(".pl") : null;
-      if (left > 0) { b.textContent = n + " " + fmtLeft(left); if (pl) pl.classList.toggle("blink", left <= 5); }
-      else { b.classList.remove("live"); b.textContent = n; if (pl) { pl.classList.remove("blink"); pl.classList.remove("susp"); } }
+      if (n == null) n = "\u2715";
+      if (left > 0) { b.textContent = (n ? n + " " : "") + fmtLeft(left); if (pl) pl.classList.toggle("blink", left <= 5); }
+      else { b.classList.remove("live"); b.textContent = n; if (!n) b.style.display = "none"; if (pl) { pl.classList.remove("blink"); pl.classList.remove("susp"); } }
     });
   }, 250);
 
