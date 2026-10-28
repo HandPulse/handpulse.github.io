@@ -1426,7 +1426,7 @@ p.fxnote{white-space:pre-wrap}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261028", VERSIO = VNUM, BUILD = 5;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261028", VERSIO = VNUM, BUILD = 6;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -5158,7 +5158,7 @@ p.fxnote{white-space:pre-wrap}
   }
   // consultes a la federació amb un límit de temps: si l'script no respon, l'app no es queda esperant
   // (la lectura d'actes converteix PDF i té més marge)
-  var LG_TEMPS = { actes: 90000, acta: 60000, clubfotos: 60000, darrera: 45000 };
+  var LG_TEMPS = { actes: 90000, acta: 60000, clubfotos: 60000, darrera: 60000 };
   function lgApi(p) {
     var qs = Object.keys(p).map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(p[k]); }).join("&");
     var ms = LG_TEMPS[p.a] || 40000, ctl = typeof AbortController !== "undefined" ? new AbortController() : null, tm = null;
@@ -5317,11 +5317,18 @@ p.fxnote{white-space:pre-wrap}
     free.forEach(function (j, k) {
       var x = fp[j], hit = dl[k] != null ? ps[dl[k]] : null;
       if (hit && !used[hit[0]]) { roster.push({ d: hit[0], n: fedName(x.n), pos: "", inv: x.t === "I" ? 1 : 0 }); used[hit[0]] = 1; sum.dorsal++; }
-      else { pend.push({ n: fedName(x.n), inv: x.t === "I" ? 1 : 0 }); sum.sense++; }
+      else { pend.push({ n: fedName(x.n), inv: x.t === "I" ? 1 : 0, nou: 1 }); sum.sense++; }
       sum.nous++;
     });
+    var pl = pend.filter(function (p) { return !p.gone; }), dp = pairNames(ps || [], pl, function (x) { return x[1]; }, function (p) { return p.n; });
+    pl.forEach(function (p, k) {
+      var hit = dp[k] != null ? ps[dp[k]] : null;
+      if (!hit || used[hit[0]]) return;
+      roster.push({ d: hit[0], n: p.n, pos: p.pos || "", inv: p.inv || 0 }); used[hit[0]] = 1; p.gone = 1; sum.dorsal++;
+      if (p.nou) sum.sense = Math.max(0, sum.sense - 1);
+    });
     app.roster = roster.filter(function (p) { return !p.gone; }).sort(function (a, b) { return a.d - b.d; });
-    app.rosterPend = pend.filter(function (p) { return !p.gone; });
+    app.rosterPend = pend.filter(function (p) { return !p.gone; }).map(function (p) { delete p.nou; return p; });
     var st = (app.staff || []).slice(), fs = (e.staff || []), sp = pairNames(st, fs, function (x) { return x.n; }, function (x) { return x.n; });
     var LET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", usedK = {};
     st.concat(app.staffOld || []).forEach(function (x) { usedK[x.k] = 1; });
@@ -5337,12 +5344,14 @@ p.fxnote{white-space:pre-wrap}
   function fedSync(quiet) {
     if (!leagueOn() || !app.ownId || !compId() || lg.sync || navigator.onLine === false) return;
     lg.sync = true; if (!quiet) { toast(T("Portant la plantilla de la federació…")); }
-    Promise.all([lgApi({ a: "equip", eq: app.ownId, id: compId() }), lgApi({ a: "darrera", eq: app.ownId, id: compId(), n: 3 }).catch(function () { return null; })]).then(function (r) {
+    Promise.all([lgApi({ a: "equip", eq: app.ownId, id: compId() }), lgApi({ a: "darrera", eq: app.ownId, id: compId(), n: 40 }).catch(function () { return null; })]).then(function (r) {
       lg.sync = false;
       var e = r[0], dd = r[1];
       if (!e || !e.ok) { if (!quiet) toast((e && e.error) || T("No s'ha pogut llegir la plantilla de la federació.")); return; }
       if (e.kits && e.kits.length) app.kits = e.kits;
       var first = !app.fedSyncAt, s = mergeFed(e, dd && dd.ok ? dd.ps : []);
+      // si a l'script li han quedat actes per convertir, ho torna a provar sol d'aquí a 2 minuts (com a molt 3 vegades)
+      if (dd && dd.ok && dd.pendents > 0 && (lg.dPend = (lg.dPend || 0) + 1) <= 3) setTimeout(function () { fedSync(true); }, 120000);
       app.fedSyncAt = todayISO(); app.fedMatches = e.matches || []; saveApp();
       if (!quiet || first || s.nous || s.baixes || s.staff) { lg.sum = s; if (!modal || modal === "ownpick") modal = "fedsum"; else lg.sumWait = true; }
       render(); actaCheck();
@@ -7555,7 +7564,7 @@ p.fxnote{white-space:pre-wrap}
       navigator.serviceWorker.register("sw.js").catch(function () {});
   } catch (e) {}
 
-  window.__peli = { get app() { return app; }, get m() { return m; }, get pending() { return pending; }, tsv: tsv, parseRoster: parseRoster,
+  window.__peli = { get app() { return app; }, get m() { return m; }, get pending() { return pending; }, tsv: tsv, parseRoster: parseRoster, fedSync: fedSync,
     openReport: openReport, rep: rep, T: function (x) { return T(x); }, TH: function (x) { return TH(x); }, setLang: function (l) { LANG = l; TCACHE = {}; TMPL = null; },  applyBackup: applyBackup, backupData: backupData };
   window.__peli.actaCheck = actaCheck;
   window.__peli.step = step; window.__peli.saveMatch = function () { saveMatch(); }; Object.defineProperty(window.__peli, "modal", { get: function () { return modal; } });
