@@ -539,7 +539,7 @@ table.rt td.lose{background:#FFC7CE;color:#9C0006;font-weight:700}
 .rephead .pdfb + .x{margin-left:0}
 #print{display:none}
 @media print{
-  @page{margin:9mm}
+  @page{size:A4;margin:9mm}
   html,body{height:auto!important;overflow:visible!important;background:#fff!important}
   body.printing>*:not(#print){display:none!important}
   body.printing #print{display:block!important}
@@ -1565,7 +1565,7 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261101", VERSIO = VNUM, BUILD = 8;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261101", VERSIO = VNUM, BUILD = 9;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -2232,10 +2232,21 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
     var sc = scorersFor(rv);
     return sc && sc.length ? sc.slice(0, 6).map(function (x) { return x[0] + " " + x[1]; }).join(", ") : "";
   }
+  // les jornades ja jugades: un partit apuntat compta si s'ha acabat o la seva data ja ha passat (un partit només creat, o de prova, no)
+  function jugades() {
+    var t = todayISO(), done = {};
+    Object.keys(app.index).forEach(function (id) {
+      var ix = app.index[id];
+      if (!ix || !ix.jor || ix.tr || !(ix.done || (ix.date && ix.date < t))) return;
+      var j = String(ix.jor).replace(/\D/g, "").replace(/^0+/, "");
+      (done[j] = done[j] || []).push(ix.rival || "");
+    });
+    return done;
+  }
+  function jugat(done, f) { return (done[String(f.j)] || []).some(function (r) { return sameTeam(r, f.riv); }); }
   function nextFixture() {
-    var c = app.cal || [], t = todayISO(), done = {};
-    Object.keys(app.index).forEach(function (id) { var ix = app.index[id]; if (ix && ix.jor) done[String(ix.jor).replace(/\D/g, "").replace(/^0+/, "")] = 1; });
-    for (var i = 0; i < c.length; i++) if (c[i].d >= t && !done[String(c[i].j)]) return c[i];
+    var c = app.cal || [], t = todayISO(), done = jugades();
+    for (var i = 0; i < c.length; i++) if (c[i].d >= t && !jugat(done, c[i])) return c[i];
     return null;
   }
   function officialFor(jor, rv) {
@@ -6450,7 +6461,7 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
       }
     }
     if (sc.length) {
-      var top = sc[0], dd = dorsalOf(0), tot = sr ? sr[7] : 0;
+      var top = sc[0], dd = dorsalOf(0), tot = sc.noTot ? 0 : (sr ? sr[7] : 0);
       c.push(esc(rep2(T("Màxim golejador: {j}, amb {g} gols ({x} per partit)."), { j: (dd != null ? dd + " " : "") + top[0], g: top[1], x: fmt1(top[1] / Math.max(1, top[2] || 1)) })) +
         (tot ? " " + esc(rep2(T("Fa el {p}% dels gols de l'equip."), { p: Math.round(top[1] * 100 / tot) })) : ""));
     }
@@ -6504,8 +6515,11 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
   function prevText(name) {
     var own = app.own || teamName(), sr = standRow(name), so = standRow(own), fm = teamForm(name), sc = scorersFor(name) || [], today = todayISO();
     var rv = (app.rivalFed || {})[nkey(name)], ps = rv && rv.ps ? rv.ps : [];
-    var pr = ps.length && sc.length ? pairNames(ps, sc, function (q) { return q[1]; }, function (x) { return x[0]; }) : {};
-    var dorsalOf = function (i) { var k = pr[i]; return k != null ? ps[k][0] : null; };
+    // els golejadors: primer els de les seves actes, que calcula l'script (els mateixos a tots els aparells); si no n'hi ha, la llista de la lliga
+    var glA = !!(rv && Array.isArray(rv.gl) && rv.gl.length);
+    if (glA) { sc = rv.gl.map(function (x) { return [x[1], x[2], x[3]]; }); if (rv.nj && rv.sxn < rv.nj) sc.noTot = true; }   // actes parcials: sense el % de l'equip
+    var pr = !glA && ps.length && sc.length ? pairNames(ps, sc, function (q) { return q[1]; }, function (x) { return x[0]; }) : {};
+    var dorsalOf = glA ? function (i) { return rv.gl[i] ? rv.gl[i][0] : null; } : function (i) { var k = pr[i]; return k != null ? ps[k][0] : null; };
     var nx = (app.cal || []).filter(function (f) { return sameTeam(f.riv, name) && f.d >= today; })[0];
     var L = ["*" + T("Fitxa del rival") + ": " + name + "*"];
     if (nx) L.push("J" + nx.j + " · " + fixWhen(nx) + " · " + T(nx.casa ? "A casa" : "A fora") + (nx.pav ? " · " + nx.pav : ""));
@@ -6529,8 +6543,12 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
   function prevHTML(name, nx, forPrint) {
     var own = app.own || teamName(), sr = standRow(name), so = standRow(own), fm = teamForm(name), sc = scorersFor(name) || [];
     var rv = (app.rivalFed || {})[nkey(name)], ps = rv && rv.ps ? rv.ps : [];
-    var pr = ps.length && sc.length ? pairNames(ps, sc, function (q) { return q[1]; }, function (x) { return x[0]; }) : {};
-    var dorsalOf = function (i) { var k = pr[i]; return k != null ? ps[k][0] : null; };
+    // els golejadors: primer els de les seves actes, que calcula l'script (els mateixos a tots els aparells); si no n'hi ha, la llista de la lliga
+    var glA = !!(rv && Array.isArray(rv.gl) && rv.gl.length);
+    if (glA) { sc = rv.gl.map(function (x) { return [x[1], x[2], x[3]]; }); if (rv.nj && rv.sxn < rv.nj) sc.noTot = true; }   // actes parcials: sense el % de l'equip
+    var pr = !glA && ps.length && sc.length ? pairNames(ps, sc, function (q) { return q[1]; }, function (x) { return x[0]; }) : {};
+    var dorsalOf = glA ? function (i) { return rv.gl[i] ? rv.gl[i][0] : null; } : function (i) { var k = pr[i]; return k != null ? ps[k][0] : null; };
+    var cobert = function () { return rv && rv.nj ? rv.sxn + " " + T("de") + " " + rv.nj + " " + T("partits") : (rv ? rv.sxn + " " + T(rv.sxn === 1 ? "partit" : "partits") : ""); };
     var h = '<div class="repcard prevcard">';
     if (nx && !forPrint) desigFetch(nx, function () { if (rep.open) renderReport(); });
     if (nx) h += fixTeamsHTML(nx) + '<p class="fxinfo">J' + nx.j + " · " + esc(fixWhen(nx)) + " · " + esc(T(nx.casa ? "A casa" : "A fora")) + (nx.pav ? " · " + esc(nx.pav) : "") + "</p>" + refsNext(nx) +
@@ -6553,12 +6571,9 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
         return '<div class="frow">' + resChip(x.res) + '<span class="fj">J' + x.j + (x.d ? " · " + fmtDate(x.d) : "") + "</span>" + crestHTML(x.riv, false, "fc") + '<span class="fr">' + esc(T(x.casa ? "a casa" : "a fora")) + " · " + esc(x.riv) + '</span><b class="fs">' + x.gf + "–" + x.gc + "</b></div>";
       }).join("") + "</div></div>";
     }
-    // si la llista de golejadors de la lliga no porta l'equip, els de les seves actes (amb el dorsal de cada acta)
-    var glA = !sc.length && rv && Array.isArray(rv.gl) && rv.gl.length;
-    if (glA) { sc = rv.gl.map(function (x) { return [x[1], x[2], x[3]]; }); dorsalOf = function (i) { return rv.gl[i] ? rv.gl[i][0] : null; }; }
     if (sc.length) {
-      var mx = sc[0][1] || 1, tot = sr ? sr[7] : 0;
-      h += '<div class="repcard"><h3>' + T("Golejadors") + ' <small class="note">' + T("els 5 primers") + (glA ? ", " + T("de les seves actes") : "") + '</small></h3><div class="scbars">' + sc.slice(0, 5).map(function (x, i) {
+      var mx = sc[0][1] || 1, tot = sc.noTot ? 0 : (sr ? sr[7] : 0);
+      h += '<div class="repcard"><h3>' + T("Golejadors") + ' <small class="note">' + T("els 5 primers") + (glA ? ", " + T("de les seves actes") + " (" + cobert() + ")" : "") + '</small></h3><div class="scbars">' + sc.slice(0, 5).map(function (x, i) {
         var dd = dorsalOf(i);
         return '<div class="scb"><span class="scn">' + (dd != null ? "<b>" + dd + "</b> " : "") + esc(x[0]) + '</span><span class="scbar"><i style="width:' + Math.round(x[1] * 100 / mx) + '%"></i></span><span class="scv">' + x[1] +
           ' <small>(' + fmt1(x[1] / Math.max(1, x[2] || 1)) + "/" + T("p.") + (tot ? " · " + Math.round(x[1] * 100 / tot) + "%" : "") + ")</small></span></div>";
@@ -6568,7 +6583,7 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
     if (rv && Array.isArray(rv.sx) && rv.sxn) {
       var exl = rv.sx.filter(function (x) { return x[2] > 0; }).slice(0, 2), rdl = rv.sx.filter(function (x) { return x[3] > 0; });
       var pjs = function (n) { return n + " " + T(n === 1 ? "partit" : "partits"); };
-      h += '<div class="repcard"><h3>' + T("Exclusions i vermelles") + ' <small class="note">' + T("de les seves actes") + ": " + pjs(rv.sxn) + '</small></h3><div class="sxl">' +
+      h += '<div class="repcard"><h3>' + T("Exclusions i vermelles") + ' <small class="note">' + T("de les seves actes") + ": " + cobert() + '</small></h3><div class="sxl">' +
         "<p><b>" + T("Més exclusions de 2′") + "</b></p>" + (exl.length ? "<ul>" + exl.map(function (x) {
           return "<li><b>" + x[0] + "</b> " + esc(fedName(x[1])) + " · " + x[2] + " " + T(x[2] === 1 ? "exclusió" : "exclusions") + " " + T("en") + " " + pjs(x[5]) + "</li>";
         }).join("") + "</ul>" : '<p class="note">' + T("Cap exclusió.") + "</p>") +
@@ -6604,7 +6619,7 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
       lg.rvf[k] = 2;
       var r = rr[0], e = rr[1], o = (app.rivalFed = app.rivalFed || {})[k] || {};
       if (r && r.ok && r.ps && r.ps.length) { o.ps = r.ps; o.j = r.j || 0; o.ult = Array.isArray(r.ult) ? r.ult : []; o.ultJ = r.ultJ || r.j || 0; o.pv = 3; o.pend = r.pendents || 0;
-        o.gl = Array.isArray(r.gl) ? r.gl : null; o.sx = Array.isArray(r.sx) ? r.sx : null; o.sxn = r.sxn || 0; }
+        o.gl = Array.isArray(r.gl) ? r.gl : null; o.sx = Array.isArray(r.sx) ? r.sx : null; o.sxn = r.sxn || 0; o.nj = r.nj || 0; }
       if (e && e.ok && e.players) { o.eq = e.players.filter(function (x) { return !x.b; }).map(function (x) { return { n: x.n, t: x.t || "J", f: x.f || "" }; }); o.club = e.club || ""; o.kits = e.kits || [];
         o.st = (e.staff || []).filter(function (x) { return x && !x.b && x.n; }).map(function (x, i) { return { k: "ABCDEFGHIJ".charAt(i), r: staffRole(x.r), n: fedName(x.n) }; }); }
       if (o.ps || o.eq) {
@@ -6638,7 +6653,7 @@ body:not(.compact) .snug .roster .pl{padding-top:1px;padding-bottom:1px}
     var h = "";
     var done = {};
     Object.keys(app.index).forEach(function (id) { var ix = app.index[id]; if (ix && ix.jor) done[String(ix.jor).replace(/\D/g, "").replace(/^0+/, "")] = 1; });
-    var nx = (app.cal || []).filter(function (f) { return sameTeam(f.riv, name) && f.d >= today && !done[String(f.j)]; })[0];
+    var jdone = jugades(), nx = (app.cal || []).filter(function (f) { return sameTeam(f.riv, name) && f.d >= today && !jugat(jdone, f); })[0];
     h += '<div class="prevgrid">' + prevHTML(name, nx, forPrint) + '<div class="repcard"><h3>' + T("Els nostres partits i notes") + "</h3>";
     if (ms.length) h += "<p><b>" + T("Partits apuntats") + ":</b> " + ms.map(function (mm) {
         var sc = scoreOf(mm), of = officialFor(mm.jor, mm.rival);
