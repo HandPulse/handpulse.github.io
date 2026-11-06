@@ -1580,6 +1580,17 @@ body:not(.compact) .snug .roster .pl .nm{min-height:0}
 
 /* informe de més d'un partit: la columna «Per partit» (la mitjana), al costat del total */
 .rt td.pm{background:rgba(127,127,127,.09);font-weight:700}
+
+/* pantalla ampla i baixa (tauleta amb el navegador i la barra de tasques, mòbil en horitzontal): en mode mòbil,
+   els jugadors i les accions omplen l'alçada en lloc de deixar mitja pantalla en blanc */
+@media (orientation:landscape) and (min-width:700px) and (max-height:540px){
+  body.compact #qui.show{align-content:stretch}
+  body.compact #qui .roster{align-self:stretch;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));grid-auto-rows:minmax(54px,1fr)}
+  body.compact #qui .pl{min-height:54px}
+  body.compact #qui .pl .n{font-size:32px}
+  body.compact #qui .pl .nm{font-size:13px}
+  body.compact #que .ac,body.compact #que .ptype{min-height:52px}
+}
 </style>
 </head>
 <body>
@@ -1686,7 +1697,7 @@ body:not(.compact) .snug .roster .pl .nm{min-height:0}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261105", VERSIO = VNUM, BUILD = 8;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261106", VERSIO = VNUM, BUILD = 1;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -7534,6 +7545,12 @@ body:not(.compact) .snug .roster .pl .nm{min-height:0}
       "\n" + T("La pagaria") + ": " + (fb.fb_pay || "-") + "\n" + T("Aparell") + ": " + (fb.fb_dev || "-") + "\n" + T("Versió") + ": " + VERSIO;
   }
   var printState = null;
+  function touchPrint() { try { return (navigator.maxTouchPoints || 0) > 0 && !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches); } catch (e) { return false; } }
+  function printLater() {
+    var fet = false, fi = function () { if (fet) return; fet = true; document.removeEventListener("visibilitychange", vis); document.removeEventListener("pointerdown", fi, true); setTimeout(endPrint, 300); };
+    var vis = function () { if (document.visibilityState === "visible") fi(); };
+    setTimeout(function () { if (!fet) { document.addEventListener("visibilitychange", vis); document.addEventListener("pointerdown", fi, true); } }, 1500);
+  }
   function endPrint() {
     if (!printState) return;
     document.body.classList.remove("printing");
@@ -7550,7 +7567,10 @@ body:not(.compact) .snug .roster .pl .nm{min-height:0}
     document.documentElement.setAttribute("data-theme", "light");
     document.body.classList.add("printing");
     document.title = title;
-    window.addEventListener("afterprint", endPrint);
+    // a l'ordinador, el senyal «he acabat d'imprimir» arriba en tancar la finestra d'impressió. Als mòbils i les tauletes pot arribar
+    // de seguida, abans que el sistema faci el PDF: si l'informe es recollís llavors, el PDF sortiria d'una sola pàgina.
+    // Allà es recull quan es torna a l'app (o en tocar la pantalla).
+    if (touchPrint()) printLater(); else window.addEventListener("afterprint", endPrint);
     var go = function () {
       try { window.print(); }
       catch (e) { endPrint(); toast("Aquest navegador no deixa imprimir des d'aquí. Prova-ho amb el fitxer a Chrome."); }
