@@ -1,4 +1,4 @@
-HANDPULSE - VERSIÓ 1.0.1 (11/10/2026)
+HANDPULSE - VERSIÓ 20261107
 
 Estadística d'handbol en directe per a entrenadors: partits, entrenaments,
 assistència, fitxa del rival i dades de la lliga. Funciona sense connexió i
@@ -9,6 +9,7 @@ index.html                  l'aplicació
 manifest.webmanifest        nom, colors i icones per instal·lar-la
 sw.js                       funcionament sense connexió
 icon-192.png, icon-512.png  icones
+.github/                    proves automàtiques (GitHub les passa soles; no surt a la web)
 
 
 1. PUBLICAR-LA (una sola vegada)
@@ -16,8 +17,9 @@ icon-192.png, icon-512.png  icones
 2. Puja-hi tots els fitxers d'aquesta carpeta, tal com estan.
 3. Settings > Pages > Branch: main i carpeta / (root) > Save.
 4. En un o dos minuts tindràs l'adreça: https://NOM-USUARI.github.io/handpulse
-Per actualitzar-la: substitueix index.html i sw.js pels de la versió nova.
-Els aparells la reben sols la propera vegada que l'obren amb connexió.
+Per actualitzar-la: substitueix index.html (i sw.js quan canviï).
+Cada aparell ho detecta sol: en obrir l'app s'actualitza directament si no hi ha cap partit en marxa,
+i si l'app ja estava oberta mostra a l'inici «Hi ha una versió nova» amb el botó Actualitza.
 
 
 2. INSTAL·LAR-LA A CADA APARELL
@@ -81,10 +83,27 @@ Ja està activat: els formularis són al compte handpulse.app@gmail.com.
 a la pantalla de benvinguda i a les novetats.
 
 
+7. QUI LA FA SERVIR
+- L'accés és lliure: no cal cap codi ni cap registre.
+- Cada aparell envia sol un avís d'alta la primera vegada i una fila d'ús al dia
+  (equip, plantilla, partits, entrenaments i si està instal·lada), sense noms de jugadors.
+
+
 PER A QUI LA MANTINGUI
-- Constants al principi del codi d'index.html:
-  LICENSING (false: tot obert durant les proves), FREE_MATCHES, PAY_URL i validKey() (pagament);
-  FB_WA, FB_MAIL o FB_FORM (on arriben les respostes de Millores i errors;
-  si són buits, s'envien amb el menú de compartir del mòbil);
-  AUTO_FORM (on arriben els informes automàtics).
-- En publicar una versió nova, canvia CACHE a sw.js i VNUM i VERSIO a index.html.
+- La versió és sempre la data de publicació (AAAAMMDD, per exemple 20261014), a VNUM,
+  al principi del codi d'index.html. Si un mateix dia se'n publica més d'una, la versió no canvia
+  i s'incrementa BUILD (intern, no es veu); el dia següent BUILD torna a 1.
+- Constants al principi del codi: FB_FORM i AUTO_FORM (on arriben les opinions i els informes).
+- Normalment només cal pujar index.html. Si canvien les icones o el manifest, puja'ls també
+  i canvia CACHE a sw.js.
+
+
+4. PROVES AUTOMÀTIQUES
+Cada vegada que es puja un fitxer al repositori, GitHub obre l'app amb Chrome, servida com a la web,
+i passa les proves principals: el repàs general, les 74 regles de preguntes, els 6 idiomes, la guia,
+el detector d'incoherències, l'informe, el radar, editar partits, la pantalla i la base de dades.
+- El resultat surt a la pestanya «Actions» del repositori: verd si tot va bé, vermell si alguna falla.
+- Si alguna falla, GitHub envia un correu al compte del repositori, amb el detall de la prova.
+- Es poden tornar a passar a mà: Actions > Proves de HandPulse > Run workflow.
+- Tarden uns 5 minuts. Són gratuïtes en un repositori públic.
+- La carpeta .github no surt a la web publicada.
