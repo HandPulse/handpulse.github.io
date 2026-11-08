@@ -1232,7 +1232,7 @@ body.compact .svm.bad{color:#FF8A80}
 
 /* PDF: la comparació amb l'acta, en dues taules de costat (cap sota les taules de jugadors) */
 #print .actasplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:start}
-#print .pg2 > .actacmp{grid-column:1/-1}
+#print .pg2 > .actacmp,#print .pg2 > .phasecard{grid-column:1/-1}
 /* en apaïsat la pàgina 1 és baixa: files més justes a la taula del resum perquè hi càpiguen la conclusió, els destacats i els llançaments per tipus */
 @media print and (orientation:landscape){#print .pg1 .rs-table table.rt td,#print .pg1 .rs-table table.rt th{padding-top:0;padding-bottom:0}#print .kpis-p .pkline{margin:0;line-height:1.2}}
 
@@ -1929,7 +1929,7 @@ details.rmore[open] > summary{margin-bottom:10px}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261107", VERSIO = VNUM, BUILD = 4;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261108", VERSIO = VNUM, BUILD = 1;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
@@ -7185,7 +7185,7 @@ details.rmore[open] > summary{margin-bottom:10px}
     var sit = function (a) { var dd = exAt(ivR, a.mid, a.t) - exAt(ivN, a.mid, a.t); if (a.e === "R") dd = -dd; return dd > 0 ? "sup" : (dd < 0 ? "inf" : "eq"); };
     var PH = [["pos", "Atac posicional"], ["ca", "Contraatac"], ["7m", "7 m"], ["cc", "Camp a camp"]], SI = [["eq", "Igualtat"], ["sup", "Superioritat"], ["inf", "Inferioritat"]];
     var cell = function (l) { var g = l.filter(function (a) { return a.a === "G"; }).length; return l.length ? gt(g, l.length) + " · " + pc(g, l.length) : "–"; };
-    var h = '<div class="repcard"><h3>' + T("Rendiment per fase de joc") + '</h3><div class="fsgrid">';
+    var h = '<div class="repcard phasecard"><h3>' + T("Rendiment per fase de joc") + '</h3><div class="fsgrid">';
     [["N", "Atac nostre"], ["R", "Atac del rival (la nostra defensa)"]].forEach(function (t) {
       var S = shots.filter(function (a) { return a.e === t[0]; });
       if (!S.length) return;
@@ -8120,12 +8120,23 @@ details.rmore[open] > summary{margin-bottom:10px}
       '<section class="pp">' + head(T("Mapes i situacions") + ": " + label) + '<div class="pg pg4">' + repMapes(d.L, true) + gkGoalsCard(d.L, d.ms) + tmTable(d.L) + situTable(d.L, d.ms) + "</div></section>";
     var rvm = d.season ? "" : repRivalMaps(d.L);
     var pm = repPlayerMaps(d.L, d.ms);
-    if (pm) html += '<section class="pp">' + head(T("On xuta cada jugador") + ": " + label) +
-      '<p class="pnote pmnote">' + T("Al camp: gols / llançaments de cada zona. A la porteria: gols / llançaments a porteria de cada sector.") + "</p>" +
-      '<div class="pg pg5">' + pm + "</div>" + '<div class="repcard pmleg">' + legend() + "</div></section>";
-    if (rvm) html += '<section class="pp">' + head(T("Rival: on xuta cada jugador") + ": " + label) +
-      '<p class="pnote pmnote">' + T("Al camp: gols / llançaments de cada zona. A la porteria: gols / llançaments a porteria de cada sector. En vermell, on el rival ens fa més mal.") + "</p>" +
-      '<div class="pg pg5">' + rvm + "</div></section>";
+    // els mapes de cada jugador, repartits en pàgines (cada una amb la seva capçalera i el logo): abans, si no hi cabien,
+    // el navegador els partia sol i la pàgina de continuació sortia sense capçalera ni logo. Hi caben 10 mapes per pàgina
+    // (A4 i carta); a la primera dels nostres, 8, perquè a dalt hi va la llegenda dels colors.
+    var pages = function (h, first, rest) {
+      var cs = h.split('<div class="repcard pmap').filter(function (x) { return x; }).map(function (x) { return '<div class="repcard pmap' + x; }), o = [], k = 0;
+      while (k < cs.length) { var n = o.length ? rest : first; o.push(cs.slice(k, k + n).join("")); k += n; }
+      return o;
+    };
+    var mapPages = function (h, title, note, leg) {
+      var ps = pages(h, leg ? 8 : 10, 10);
+      ps.forEach(function (c, i) {
+        html += '<section class="pp">' + head(title + (ps.length > 1 ? " (" + (i + 1) + "/" + ps.length + ")" : "")) +
+          (i ? "" : '<p class="pnote pmnote">' + note + "</p>" + (leg ? '<div class="repcard pmleg">' + legend() + "</div>" : "")) + '<div class="pg pg5">' + c + "</div></section>";
+      });
+    };
+    if (pm) mapPages(pm, T("On xuta cada jugador") + ": " + label, T("Al camp: gols / llançaments de cada zona. A la porteria: gols / llançaments a porteria de cada sector."), true);
+    if (rvm) mapPages(rvm, T("Rival: on xuta cada jugador") + ": " + label, T("Al camp: gols / llançaments de cada zona. A la porteria: gols / llançaments a porteria de cada sector. En vermell, on el rival ens fa més mal."), false);
     doPrint(html, "Informe " + label);
   }
 
