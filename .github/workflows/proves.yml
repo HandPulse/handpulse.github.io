@@ -1,0 +1,25 @@
+# Proves automàtiques de HandPulse: a cada pujada al repositori, GitHub obre l'app amb Chrome i passa les proves principals.
+# Resultat a la pestanya «Actions» del repositori; si alguna falla, GitHub avisa per correu.
+name: Proves de HandPulse
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  proves:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Agafa els fitxers del repositori
+        uses: actions/checkout@v4
+      - name: Prepara Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instal·la el navegador de proves
+        run: |
+          pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Passa les proves
+        run: python _proves/executa.py
