@@ -6,7 +6,7 @@ HP_URL = os.environ.get("HP_URL", "http://127.0.0.1:8765/index.html")   # l'app,
 import asyncio, json, sys, re
 from playwright.async_api import async_playwright
 exec(open(os.path.join(DIR, 'fonts.py')).read())
-FITX = sys.argv[1] if len(sys.argv) > 1 else "/mnt/user-data/outputs/peligrograma_directe.html"
+FITX = sys.argv[1] if len(sys.argv) > 1 else os.path.join(DIR, "..", "index.html")
 ROSTER = [{"d": d, "n": "J" + str(d), "gk": d == 1} for d in (1, 2, 3)]
 G = "() => { const g = document.querySelector('#ov .guide'); if (!g) return null; return { n: g.querySelector('.gcount').textContent, t: g.querySelector('.gti').textContent, btn: [...g.querySelectorAll('.gnav .btn')].map(b => b.textContent.trim()).join(' | '), flags: !!g.querySelector('.lsel .langbtn'), svg: !!g.querySelector('.gart svg') }; }"
 CATW = r"\b(amb|els|aquest|aquesta|què|partit|partits|jugadors|llançaments?|Desa|Toca|Tanca|també|només|encara|perquè|Esborra|assistència|porteria|aturades?|rellotge|guia|pilota|toca)\b"

@@ -7,7 +7,7 @@ import asyncio, json, random, sys, os
 from playwright.async_api import async_playwright
 exec(open(os.path.join(DIR, 'fonts.py')).read())
 exec(open(os.path.join(DIR, 'perf_mobil.py')).read().split("CLICK = ")[0].split("FITX = ")[1].split("\n", 1)[1])
-NOU = "/mnt/user-data/outputs/peligrograma_directe.html"; VELL = "/mnt/user-data/outputs/.proves/app_abans_idb.html"
+NOU = os.path.join(DIR, "..", "index.html"); VELL = os.path.join(DIR, "..", "index.html")   # al repositori no hi ha la versió d'abans
 def url(f): return HP_URL   # al repositori, sempre l'app servida per web
 CLOSE = "() => { const c = document.querySelector(\"#ov [data-act='close']\"); if (c && !document.getElementById('ov').hidden) c.click(); }"
 IDB = """() => new Promise(res => { const rq = indexedDB.open('handpulse', 1); rq.onupgradeneeded = () => rq.result.createObjectStore('m');

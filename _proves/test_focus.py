@@ -5,7 +5,7 @@ HP_URL = os.environ.get("HP_URL", "http://127.0.0.1:8765/index.html")   # l'app,
 import asyncio, json, sys
 from playwright.async_api import async_playwright
 exec(open(os.path.join(DIR, 'fonts.py')).read())
-FITX = sys.argv[1] if len(sys.argv) > 1 else "/mnt/user-data/outputs/peligrograma_directe.html"
+FITX = sys.argv[1] if len(sys.argv) > 1 else os.path.join(DIR, "..", "index.html")
 ROSTER = [{"d": 1, "n": "Porter", "gk": True}] + [{"d": d, "n": "Jugador " + str(d), "gk": False} for d in (3, 5, 7, 9, 11)]
 G7 = [1, 1, 2, 5, 6]          # gols del 7 a cada partit (millora)
 CA_R = [1, 2, 1, 2, 6]        # gols rebuts en contraatac (el 5è partit, molts)

@@ -6,7 +6,7 @@ import asyncio, json, random, sys
 from playwright.async_api import async_playwright
 exec(open(os.path.join(DIR, 'fonts.py')).read())
 exec(open(os.path.join(DIR, 'perf_mobil.py')).read().split("CLICK = ")[0].split("FITX = ")[1].split("\n", 1)[1])
-FITX = sys.argv[1] if len(sys.argv) > 1 else "/mnt/user-data/outputs/peligrograma_directe.html"
+FITX = sys.argv[1] if len(sys.argv) > 1 else os.path.join(DIR, "..", "index.html")
 VIS = """() => { const v = s => { const e = document.querySelector('#rep ' + s); if (!e) return 'no hi és'; const vis = e.checkVisibility ? e.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true }) : !e.closest('details:not([open])'); return vis && (e.tagName === 'SUMMARY' || !e.closest('details:not([open])')) ? 'a la vista' : 'plegat'; };
   return { marcador: v('.rs-score'), claus: v('.keyline, .kcard, .claus, .keys'), detall: v('details.rmore > summary'), taula: v('.rs-table'), tipus: v('.rs-types'), pastis: v('.rs-pie'), obert: !!(document.querySelector('#rep details.rmore') || {}).open }; }"""
 async def main():
