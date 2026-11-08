@@ -18,7 +18,7 @@ socketserver.TCPServer.allow_reuse_address = True
 srv = socketserver.ThreadingTCPServer(("127.0.0.1", PORT), functools.partial(Silenci, directory=ARREL))
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 env = dict(os.environ, HP_URL="http://127.0.0.1:%d/index.html" % PORT, PYTHONIOENCODING="utf-8")
-fallen = []; t00 = time.time()
+fallen = []; files = []; detalls = []; t00 = time.time()
 for f, args in PROVES:
     t0 = time.time()
     try:
@@ -28,8 +28,24 @@ for f, args in PROVES:
         out, codi = "massa temps (més de 20 minuts)", 1
     dolent = codi != 0 or any(re.search(p, out) for p in MAL)
     print(("✗ " if dolent else "✓ ") + f + " (%d s)" % (time.time() - t0), flush=True)
+    files.append((f, dolent, round(time.time() - t0)))
     if dolent:
         fallen.append(f); print("  ---- detall ----\n  " + "\n  ".join(out.strip().split("\n")[-40:]), flush=True)
+        # a GitHub, una anotació amb la prova i el motiu: surt a la pàgina de l'execució sense iniciar la sessió
+        if os.environ.get("GITHUB_ACTIONS"):
+            linies = [l.strip() for l in out.strip().split("\n") if l.strip()]
+            clau = [l for l in linies if re.search("|".join(MAL), l)] or linies[-6:]
+            msg = "\n".join((clau[:6] + ["…"] + linies[-4:]) if len(clau) > 6 else clau + [l for l in linies[-4:] if l not in clau])[:1500]
+            print("::error title=Falla " + f + "::" + msg.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"), flush=True)
+            detalls.append((f, "\n".join(linies[-30:])))
 print("RESUM: %d proves en %d min · %s" % (len(PROVES), round((time.time() - t00) / 60), "totes correctes" if not fallen else "fallen: " + ", ".join(fallen)))
+# a GitHub, un resum a la pàgina de l'execució: una fila per prova, i el detall de les que fallen
+if os.environ.get("GITHUB_STEP_SUMMARY"):
+    try:
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fs:
+            fs.write("## Proves de HandPulse\n\n| Prova | Resultat | Temps |\n|---|---|---|\n")
+            fs.write("".join("| %s | %s | %d s |\n" % (f, "✗ falla" if d else "✓ correcta", t) for f, d, t in files))
+            for f, txt in detalls: fs.write("\n### %s\n\n```\n%s\n```\n" % (f, txt))
+    except Exception as e: print("no s'ha pogut escriure el resum:", e)
 srv.shutdown()
 sys.exit(1 if fallen else 0)
