@@ -9,7 +9,8 @@ index.html                  l'aplicació
 manifest.webmanifest        nom, colors i icones per instal·lar-la
 sw.js                       funcionament sense connexió
 icon-192.png, icon-512.png  icones
-.github/                    proves automàtiques (GitHub les passa soles; no surt a la web)
+_proves/                    proves automàtiques (GitHub les passa soles; no surt a la web)
+.github/workflows/proves.yml  l'ordre perquè GitHub passi les proves (es crea a la web de GitHub)
 
 
 1. PUBLICAR-LA (una sola vegada)
@@ -106,4 +107,4 @@ el detector d'incoherències, l'informe, el radar, editar partits, la pantalla i
 - Si alguna falla, GitHub envia un correu al compte del repositori, amb el detall de la prova.
 - Es poden tornar a passar a mà: Actions > Proves de HandPulse > Run workflow.
 - Tarden uns 5 minuts. Són gratuïtes en un repositori públic.
-- La carpeta .github no surt a la web publicada.
+- La carpeta _proves no surt a la web publicada.
