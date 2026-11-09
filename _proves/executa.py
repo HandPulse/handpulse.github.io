@@ -6,7 +6,7 @@ DIR = os.path.dirname(os.path.abspath(__file__)); ARREL = os.path.abspath(os.pat
 PORT = int(os.environ.get("HP_PORT", "8765"))
 PROVES = [("smoke.py", []), ("test_regles.py", []), ("test_idiomes.py", [os.path.join(ARREL, "index.html"), "es,en,fr,de,pt"]), ("test_guia.py", []), ("test_incoh.py", []),
           ("test_5claus.py", []), ("test_radar.py", []), ("test_edita.py", []), ("test_perpartit.py", []), ("test_pastis.py", []),
-          ("test_pantalla.py", []), ("test_idb.py", []), ("test_focus.py", []), ("test_pdf_logos.py", []), ("test_3d.py", []), ("test_estrelles.py", []), ("test_wp.py", []), ("test_tfix.py", []), ("test_neu.py", []), ("test_sw.py", []), ("test_fitxa_pdf.py", [])]
+          ("test_pantalla.py", []), ("test_idb.py", []), ("test_focus.py", []), ("test_pdf_logos.py", []), ("test_3d.py", []), ("test_estrelles.py", []), ("test_wp.py", []), ("test_tfix.py", []), ("test_neu.py", []), ("test_sw.py", []), ("test_fitxa_pdf.py", []), ("test_dorsal.py", [])]
 nomes = [x.strip() for x in os.environ.get("HP_NOMES", "").split(",") if x.strip()]
 if nomes: PROVES = [p for p in PROVES if p[0] in nomes]
 # senyals d'error a la sortida de les proves
