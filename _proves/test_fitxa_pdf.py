@@ -26,11 +26,17 @@ async def main():
             await pg.evaluate("() => { window.print = () => {}; const b = [...document.querySelectorAll('#rep .pfx button')].find(x => x.getAttribute('data-act') !== 'pshare'); if (b) b.click(); }"); await pg.wait_for_timeout(900)
             secs = await pg.evaluate("() => [...document.querySelectorAll('#print section.pp')].map(x => ({ t: ((x.querySelector('.ptitle, .fxh b') || {}).textContent || '').slice(0, 50), logo: !!x.querySelector('.plogo'), svgs: x.querySelectorAll('svg').length }))")
             f = "/tmp/fitxa_%s.pdf" % ("cmp" if amb_cmp else "sol"); open(f, "wb").write(await pg.pdf(format="A4", print_background=True))
-            n = int(subprocess.run(["pdfinfo", f], capture_output=True, text=True).stdout.split("Pages:")[1].split()[0])
-            sense = [k for k in range(1, n + 1) if "Hand" not in subprocess.run(["pdftotext", "-f", str(k), "-l", str(k), f, "-"], capture_output=True, text=True).stdout]
+            # pàgina per pàgina, només si hi ha pdfinfo i pdftotext (a GitHub no hi són: allà es comproven les seccions, cadascuna amb el logo)
+            import shutil
+            if shutil.which("pdfinfo") and shutil.which("pdftotext") and not os.environ.get("HP_SENSE_PDFINFO"):
+                n = int(subprocess.run(["pdfinfo", f], capture_output=True, text=True).stdout.split("Pages:")[1].split()[0])
+                sense = [k for k in range(1, n + 1) if "Hand" not in subprocess.run(["pdftotext", "-f", str(k), "-l", str(k), f, "-"], capture_output=True, text=True).stdout]
+            else:
+                n, sense = -1, []
+                print("   · sense pdfinfo en aquest ordinador: es comproven les seccions del PDF, no les pàgines")
             esp = 4 if amb_cmp else 3
             ok(len(secs) == esp and all(x["logo"] for x in secs) and secs[1]["svgs"] >= 2, "seccions: %s" % [(x["t"][:30], x["svgs"], "logo" if x["logo"] else "SENSE") for x in secs])
-            ok(not sense, "PDF A4: %d pàgines · pàgines sense logo: %s" % (n, sense or "cap"))
+            ok(not sense, "PDF A4: %s pàgines · pàgines sense logo: %s" % (n if n >= 0 else "?", sense or "cap"))
             print("   errors: %s" % (errs or "cap")); mal += 1 if errs else 0
             await b.close()
         print("RESUM: %s" % ("tot correcte" if not mal else "%d problemes" % mal))
