@@ -1,6 +1,6 @@
-// HandPulse: funcionament sense connexió (versió 20261018-1).
+// HandPulse: funcionament sense connexió (versió 20261109-1).
 // En publicar una versió nova, canvia CACHE perquè els aparells la descarreguin.
-const CACHE = "handpulse-20261018-1";
+const CACHE = "handpulse-20261109-1";
 // Escuts oficials de la federació: es guarden la primera vegada i després surten a l'instant, també sense connexió.
 // Aquest magatzem no s'esborra en canviar de versió (si un club canvia d'escut, la imatge té una adreça nova).
 const ESCUTS = "handpulse-escuts";
@@ -19,11 +19,22 @@ self.addEventListener("fetch", e => {
   if (url.origin === self.location.origin) {
     // La comprovació de versió nova sempre va a la xarxa, mai a la còpia desada.
     if (url.searchParams.has("hpchk")) return;
-    // Primer la xarxa per a la pàgina, preguntant sempre a GitHub si ha canviat (així s'actualitza a l'instant),
-    // i la còpia desada si no hi ha connexió.
+    // Primer la xarxa per a la pàgina, preguntant sempre a GitHub si ha canviat (així s'actualitza a l'instant).
+    // Però si en 3 segons no ha arribat (un pavelló amb poca cobertura), s'obre la còpia desada a l'instant, i la
+    // descàrrega continua per darrere i deixa la versió nova per a la propera vegada. Sense connexió, la còpia desada.
     if (req.mode === "navigate") {
-      e.respondWith(fetch(new Request(req.url, { cache: "no-cache", credentials: "same-origin" })).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put("./index.html", cp)); return res; })
-        .catch(() => caches.match("./index.html")));
+      const net = fetch(new Request(req.url, { cache: "no-cache", credentials: "same-origin" })).then(res => {
+        if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put("./index.html", cp)); }
+        return res;
+      });
+      e.respondWith(new Promise(resolve => {
+        let done = false;
+        const fromCache = () => caches.match("./index.html").then(hit => { if (!done && hit) { done = true; resolve(hit); } return hit; });
+        const timer = setTimeout(fromCache, 3000);
+        net.then(res => { if (!done) { done = true; clearTimeout(timer); resolve(res); } },
+          () => { clearTimeout(timer); fromCache().then(hit => { if (!done) { done = true; resolve(hit || Response.error()); } }); });
+      }));
+      e.waitUntil(net.then(() => {}, () => {}));
       return;
     }
     e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req).then(res => {
