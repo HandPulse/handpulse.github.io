@@ -53,7 +53,7 @@ async def partit(p, nom, dev):
     await tap(QUI(3)); await tap(A("PER")); await tap('[data-act="tipus"][data-v="MP"]'); await tap('#on [data-act="opp"][data-v="4"]', "de qui")
     await tap(QUI(5)); await tap(A("P")); await tap('[data-act="zone"][data-v="6C"]'); await tap('#on [data-act="rebot"][data-v="7"]', "rebot")
     await tap(QUI(6)); await tap(A("BLQ")); await tap('#on [data-act="opp"][data-v="7"]'); await tap('#on [data-act="rebot"][data-v="A"]')
-    await tap(QUI(9)); await tap(A("G")); await tap('[data-act="zone"][data-v="7M"]'); await port(); await tap('#on [data-act="prov7"][data-v="5"]', "7 m provocat")
+    await tap(QUI(9)); await tap(A("G")); await tap('[data-act="zone"][data-v="7M"]'); await tap('#on [data-act="prov7"][data-v="5"]', "7 m provocat"); await port()
     await rival(4); await tap(A("2M")); await tap('#on [data-act="opp"][data-v="2"]', "provocat")
     await tap(QUI(7)); await tap('#que [data-act="ptype"][data-v="CD"]'); await tap('[data-act="zone"][data-v="6C"]'); await tap('#que .acts.res [data-act="action"][data-v="GA"]'); await port(); await tap('[data-act="assist"][data-v="2"]', "assistència")
     await tap(QUI(1)); await tap('#que [data-act="ptype"][data-v="CC"]', "camp a camp del porter"); await tap('#que .acts.res [data-act="action"][data-v="G"]'); await port()

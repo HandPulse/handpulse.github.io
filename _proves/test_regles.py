@@ -16,13 +16,13 @@ F = [
   ("Pèrdua joc passiu", "N", [("A", "PER"), ("T", "JP")], {"com": ["opp"], "rap": [], "ess": []}, ["od"]),
   ("Pèrdua passos", "N", [("A", "PER"), ("T", "PS")], {"com": [], "rap": [], "ess": []}, []),
   ("2 minuts", "N", [("A", "2M")], {"com": ["opp"], "rap": ["opp"], "ess": ["opp"]}, ["od"]),
-  ("Gol de 7 m", "N", [("A", "G"), ("Z", "7M")], {"com": ["porteria", "prov7"], "rap": ["prov7"], "ess": None}, ["pv"]),
+  ("Gol de 7 m", "N", [("A", "G"), ("Z", "7M")], {"com": ["prov7", "porteria"], "rap": ["prov7"], "ess": None}, ["pv"]),
   ("Pal (rebot)", "N", [("A", "P"), ("Z", "9C")], {"com": ["rebot"], "rap": [], "ess": []}, ["rbe"]),
   ("Blocatge (de qui i rebot)", "N", [("A", "BLQ")], {"com": ["opp", "rebot"], "rap": [], "ess": []}, ["od", "rbe"]),
   ("Assistència + gol", "N", [("A", "GA"), ("Z", "6C")], {"com": ["porteria", "assist"], "rap": ["assist"], "ess": ["assist"]}, ["s"]),
   ("Pèrdua del rival (mal passe)", "R", [("A", "PER"), ("T", "MP")], {"com": ["opp"], "rap": [], "ess": []}, ["od"]),
   ("2 minuts al rival", "R", [("A", "2M")], {"com": ["opp"], "rap": ["opp"], "ess": ["opp"]}, ["od"]),
-  ("7 m del rival", "R", [("A", "G"), ("Z", "7M")], {"com": ["porteria", "prov7"], "rap": ["prov7"], "ess": None}, ["pv"]),
+  ("7 m del rival", "R", [("A", "G"), ("Z", "7M")], {"com": ["prov7", "porteria"], "rap": ["prov7"], "ess": None}, ["pv"]),
 ]
 async def main():
     async with async_playwright() as p:
