@@ -37,7 +37,12 @@ async def main():
                         for ch in str(d): await tap("[data-act='digit'][data-v='" + ch + "']")
                         await tap("[data-act='padok']")
                     elif not await tap("[data-act='rplayer'][data-v='" + str(d) + "']"): await tap("[data-act='rnone']")
-                await tap("#que [data-act='action'][data-v='" + a + "']"); await pg.wait_for_timeout(120)
+                if a in ("G", "A", "F", "P", "B"):   # la manera nova: «Llançament» i el resultat a la porteria
+                    await tap("#que [data-act='ptype'][data-v='LL']"); await pg.wait_for_timeout(80)
+                    if await pg.evaluate("() => !!window.__peli.pending && window.__peli.step() === 'zona'"): await tap("[data-act='zone'][data-v='9C']")
+                    await tap("#que [data-act='gres'][data-v='" + {"G": "G:5", "A": "A:5", "F": "F:T", "P": "P:T:F", "B": "B"}[a] + "']")
+                else: await tap("#que [data-act='action'][data-v='" + a + "']")
+                await pg.wait_for_timeout(120)
                 # per si queda alguna pregunta (qui l'ha provocat, etc.), «No ho sé» o «Salta»
                 for k in range(3):
                     if not await pg.evaluate("() => !!window.__peli.pending"): break

@@ -16,13 +16,16 @@ F = [
   ("Pèrdua joc passiu", "N", [("A", "PER"), ("T", "JP")], {"com": ["opp"], "rap": [], "ess": []}, ["od"]),
   ("Pèrdua passos", "N", [("A", "PER"), ("T", "PS")], {"com": [], "rap": [], "ess": []}, []),
   ("2 minuts", "N", [("A", "2M")], {"com": ["opp"], "rap": ["opp"], "ess": ["opp"]}, ["od"]),
-  ("Gol de 7 m", "N", [("A", "G"), ("Z", "7M")], {"com": ["prov7", "porteria"], "rap": ["prov7"], "ess": None}, ["pv"]),
-  ("Pal (rebot)", "N", [("A", "P"), ("Z", "9C")], {"com": ["rebot"], "rap": [], "ess": []}, ["rbe"]),
-  ("Blocatge (de qui i rebot)", "N", [("A", "BLQ")], {"com": ["opp", "rebot"], "rap": [], "ess": []}, ["od", "rbe"]),
-  ("Assistència + gol", "N", [("A", "GA"), ("Z", "6C")], {"com": ["porteria", "assist"], "rap": ["assist"], "ess": ["assist"]}, ["s"]),
+  ("Gol de 7 m", "N", [("P", "LL"), ("Z", "7M"), ("R", "G:5")], {"com": ["prov7", "resultat"], "rap": ["prov7", "resultat"], "ess": None}, ["pv"]),
+  ("Pal (rebot)", "N", [("P", "LL"), ("Z", "9C"), ("R", "P:TL:R")], {"com": ["resultat", "rebot"], "rap": ["resultat", "rebot"], "ess": ["resultat", "rebot"]}, ["rbe"]),
+  ("Blocat per un defensor (de qui)", "N", [("P", "LL"), ("Z", "9C"), ("R", "B")], {"com": ["resultat", "opp"], "rap": ["resultat"], "ess": ["resultat"]}, ["od"]),
+  ("Assistència + llançament i gol", "N", [("P", "LLA"), ("Z", "6C"), ("R", "G:5")], {"com": ["resultat", "assist"], "rap": ["resultat", "assist"], "ess": ["resultat", "assist"]}, ["s"]),
   ("Pèrdua del rival (mal passe)", "R", [("A", "PER"), ("T", "MP")], {"com": ["opp"], "rap": [], "ess": []}, ["od"]),
   ("2 minuts al rival", "R", [("A", "2M")], {"com": ["opp"], "rap": ["opp"], "ess": ["opp"]}, ["od"]),
-  ("7 m del rival", "R", [("A", "G"), ("Z", "7M")], {"com": ["prov7", "porteria"], "rap": ["prov7"], "ess": None}, ["pv"]),
+  ("7 m del rival", "R", [("P", "LL"), ("Z", "7M"), ("R", "A:5")], {"com": ["prov7", "resultat"], "rap": ["prov7", "resultat"], "ess": None}, ["pv"]),
+  ("Pal (fora)", "N", [("P", "LL"), ("Z", "9C"), ("R", "P:L2:F")], {"com": ["resultat"], "rap": ["resultat"], "ess": ["resultat"]}, []),
+  ("Llançament fora", "N", [("P", "LL"), ("Z", "9E"), ("R", "F:R3")], {"com": ["resultat"], "rap": ["resultat"], "ess": ["resultat"]}, []),
+  ("Assistència + llançament i aturada", "N", [("P", "LLA"), ("Z", "6C"), ("R", "A:2")], {"com": ["resultat", "assist"], "rap": ["resultat", "assist"], "ess": ["resultat", "assist"]}, ["s"]),
 ]
 async def main():
     async with async_playwright() as p:
@@ -53,9 +56,11 @@ async def main():
                     else:
                         if nom == "mobil": await tap("#qui [data-act='rival']")
                         await tap("[data-act='rplayer'][data-v='" + str(rd) + "']")
-                    vist = []
+                    vist = []; res = None
                     for k, v in init:
                         if k == "A": await tap("#que [data-act='action'][data-v='" + v + "']")
+                        elif k == "P": await tap("#que [data-act='ptype'][data-v='" + v + "']")
+                        elif k == "R": res = v
                         elif k == "T":
                             s0 = await st()
                             if s0 == "tipus": vist.append("tipus"); await tap("[data-act='tipus'][data-v='" + v + "']")
@@ -67,9 +72,10 @@ async def main():
                         if s0 in ("qui", "cap"): break
                         vist.append(s0)
                         if s0 == "porteria": await tap("[data-act='goal'][data-v='5']")
+                        elif s0 == "resultat": await tap("#que [data-act='gres'][data-v='" + (res or "G:5") + "']")
                         elif s0 == "opp": await tap("#on [data-act='opp'][data-v]:not([data-v='']):not([data-v='PF']):not([data-v='PR'])")
                         elif s0 == "prov7": await tap("#on [data-act='prov7'][data-v]:not([data-v=''])")
-                        elif s0 == "rebot": await tap("#on [data-act='rebot'][data-v]:not([data-v='']):not([data-v='A'])")
+                        elif s0 == "rebot": await tap("#on [data-act='rebot'][data-v]:not([data-v='']):not([data-v='A'])") or await tap("#on [data-act='rebot'][data-v]")
                         elif s0 == "assist": await tap("#on [data-act='assist'][data-v]:not([data-v=''])")
                         elif s0 == "zona": await tap("[data-act='zone'][data-v='9C']")
                         else: break
