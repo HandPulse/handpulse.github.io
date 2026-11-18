@@ -62,7 +62,7 @@ async def main():
             await pg.evaluate(PRINT); await pg.wait_for_timeout(800)
             fx = await pg.evaluate("""() => [...document.querySelectorAll('#print section.pp')].map(sec => ({ t: (sec.querySelector('.ptitle') || {}).textContent || '', logo: !!sec.querySelector('.plogo'), mapes: sec.querySelectorAll('.repcard.pmap').length }))""")
             mp = [x for x in fx if x["t"].startswith("On xuta cada jugador del rival")]
-            ok(pant == 13 and len(mp) == 2 and all(x["logo"] for x in fx) and [x["mapes"] for x in mp] == [10, 3], "fitxa del rival: %d mapes a la pantalla · PDF: %s" % (pant, [(x["t"][:40], x["mapes"], "logo" if x["logo"] else "SENSE LOGO") for x in fx]))
+            ok(pant == 13 and len(mp) == 2 and all(x["logo"] for x in fx) and [x["mapes"] for x in mp] == [8, 5], "fitxa del rival: %d mapes a la pantalla · PDF: %s" % (pant, [(x["t"][:40], x["mapes"], "logo" if x["logo"] else "SENSE LOGO") for x in fx]))
             print("   errors: %s" % (errs or "cap")); mal += 1 if errs else 0
             await b.close()
         print("RESUM: %s" % ("tot correcte" if not mal else "%d problemes" % mal))
