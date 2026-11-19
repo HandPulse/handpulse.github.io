@@ -32,8 +32,8 @@ async def main():
         print("      " + str(r)[:300])
         ok(any("id_partido" not in u and "p=1596532" in u for u in demanat), "l'app demana l'acta 1596532 a l'script")
         ok(r["jor"] == "8" and r["arb"] and len(r["arb"]) == 2, "acta lligada a la jornada 8, amb els 2 àrbitres")
-        ok(r["riv"] == 14 and r["riv1"] and r["riv1"].get("n"), "la plantilla del rival: 14 jugadors amb dorsal i nom")
-        ok("16" in r["toast"] and "14" in r["toast"], "avís: %s" % r["toast"][:90])
+        ok(r["riv"] == 15 and r["riv1"] and r["riv1"].get("n"), "la plantilla del rival: 15 jugadors amb dorsal i nom")
+        ok("16" in r["toast"] and "15" in r["toast"], "avís: %s" % r["toast"][:90])
         print("   errors: %s" % (errs or "cap")); mal += 1 if errs else 0
         await b.close()
         print("RESUM: %s" % ("tot correcte" if not mal else "%d problemes" % mal))
