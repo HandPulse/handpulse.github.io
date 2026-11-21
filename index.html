@@ -1786,6 +1786,15 @@ body.bigbtn .gpg{grid-template-rows:48px 100px repeat(3,minmax(100px,1fr)) 8px}
 
 /* resum de la comparativa de jugadors */
 .pcsum{margin-top:14px} .pcsum h4{margin:0 0 6px} .pcfr{font-weight:600;margin:8px 0 0}
+
+/* impressió a l'iPad i l'iPhone: cap bloc es parteix entre dues pàgines i les pàgines no tenen alçada fixa */
+@media print{
+  html.ios #print section{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
+  html.ios #print .pg{display:block!important}   /* dins d'una graella, els blocs no poden ser peces de línia */
+  html.ios #print :has(> .repcard){display:block!important}   /* també les files i graelles interiors que tenen blocs a dins */
+  html.ios #print .repcard:not(.rs-claus):not(.actalink){display:inline-block!important;width:100%!important;vertical-align:top;box-sizing:border-box;break-inside:avoid;page-break-inside:avoid}
+  html.ios #print table,html.ios #print svg,html.ios #print tr{break-inside:avoid;page-break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -1812,6 +1821,9 @@ body.bigbtn .gpg{grid-template-rows:48px 100px repeat(3,minmax(100px,1fr)) 8px}
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <div id="alertbar" class="alertbar" role="status" aria-live="polite" hidden></div>
 <script>
+// iPad i iPhone: en imprimir, l'iPad afegeix capçalera i peu a cada pàgina; es marca per ajustar l'impressió (cap bloc partit)
+try { if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) document.documentElement.classList.add("ios"); } catch (e) {}
+
 (function () {
   "use strict";
 
@@ -2019,7 +2031,7 @@ body.bigbtn .gpg{grid-template-rows:48px 100px repeat(3,minmax(100px,1fr)) 8px}
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261120", VERSIO = VNUM, BUILD = 1;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261121", VERSIO = VNUM, BUILD = 1;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
