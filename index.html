@@ -1872,7 +1872,7 @@ try { if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform ==
   var KOPP = ["MP", "CM", "FA", "JP"];   // pèrdues on, a nivell Complet, es pregunta qui ha recuperat (totes les que en donen)
   var NOBTN = ["REC", "B", "7MP", "2MP"];
   // el sistema de defensa del rival: es tria quan canvia, i les accions queden marcades amb el que hi ha en aquell moment
-  var DFS = ["6:0", "5:1", "3:2:1", "4:2", "5+1", "4+2", "Individual"];
+  var DFS = ["6:0", "5:1", "3:2:1", "4:2", "3:3", "5+1", "4+2", "Individual"];
   // el botó de les defenses: la nostra (m.dfN) i la del rival (m.df)
   function dfLab() { return T("Nostra") + " " + (m.dfN ? T(m.dfN) : "—") + " · " + T("Rival") + " " + (m.df ? T(m.df) : "—"); }   // ja no tenen botó: es compten soles (els partits antics les conserven)
   var IDS = [];
@@ -2031,7 +2031,7 @@ try { if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform ==
     try { localStorage.setItem("peli-directe:prova", "1"); localStorage.removeItem("peli-directe:prova"); return true; }
     catch (e) { return false; }
   })();
-  var VNUM = "20261121", VERSIO = VNUM, BUILD = 1;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
+  var VNUM = "20261123", VERSIO = VNUM, BUILD = 1;   // VNUM: data de publicació (AAAAMMDD). BUILD: només puja si el mateix dia es publica més d'una vegada.
   // MILLORES I ERRORS: on arriben les respostes. FB_WA = número de WhatsApp (amb prefix, p. ex. "34600000000"),
   // FB_MAIL = adreça de correu, FB_FORM = { url: ".../formResponse", fields: { who: "entry.1", imp: ..., err, miss, live, pay, dev } }
   // per enviar-les directament a un formulari de Google (totes queden en un full de càlcul). Si estan buits, es comparteixen o es copien.
