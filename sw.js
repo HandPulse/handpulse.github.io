@@ -1,10 +1,10 @@
 // HandPulse: funcionament sense connexió (versió 20261109-1).
 // En publicar una versió nova, canvia CACHE perquè els aparells la descarreguin.
-const CACHE = "handpulse-20261109-1";
+const CACHE = "handpulse-20261124-1";
 // Escuts oficials de la federació: es guarden la primera vegada i després surten a l'instant, també sense connexió.
 // Aquest magatzem no s'esborra en canviar de versió (si un club canvia d'escut, la imatge té una adreça nova).
 const ESCUTS = "handpulse-escuts";
-const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
+const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 self.addEventListener("install", e => {
   // En instal·lar, sempre fitxers nous de GitHub, mai còpies velles del navegador.
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting()));
