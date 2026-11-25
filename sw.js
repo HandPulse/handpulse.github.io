@@ -1,6 +1,6 @@
 // HandPulse: funcionament sense connexió (versió 20261109-1).
 // En publicar una versió nova, canvia CACHE perquè els aparells la descarreguin.
-const CACHE = "handpulse-20261124-1";
+const CACHE = "handpulse-20261124-2";
 // Escuts oficials de la federació: es guarden la primera vegada i després surten a l'instant, també sense connexió.
 // Aquest magatzem no s'esborra en canviar de versió (si un club canvia d'escut, la imatge té una adreça nova).
 const ESCUTS = "handpulse-escuts";
