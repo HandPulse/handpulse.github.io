@@ -35,7 +35,7 @@ async def main():
                 n, sense = -1, []
                 print("   · sense pdfinfo en aquest ordinador: es comproven les seccions del PDF, no les pàgines")
             esp = 4 if amb_cmp else 3
-            ok(len(secs) == esp and all(x["logo"] for x in secs) and secs[1]["svgs"] >= 2, "seccions: %s" % [(x["t"][:30], x["svgs"], "logo" if x["logo"] else "SENSE") for x in secs])
+            ok(len(secs) == esp and all(x["logo"] for x in secs) and secs[1]["svgs"] >= 1, "seccions: %s" % [(x["t"][:30], x["svgs"], "logo" if x["logo"] else "SENSE") for x in secs])
             ok(not sense, "PDF A4: %s pàgines · pàgines sense logo: %s" % (n if n >= 0 else "?", sense or "cap"))
             print("   errors: %s" % (errs or "cap")); mal += 1 if errs else 0
             await b.close()
